@@ -1,0 +1,3371 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TrueCompanion</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Nunito:wght@400;600;700;800&display=swap');
+
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --forest: #1B4332;
+      --fmid: #2D6A4F;
+      --sage: #52B788;
+      --sagl: #95D5B2;
+      --mint: #D8F3DC;
+      --cream: #FAF7F2;
+      --terra: #E07A5F;
+      --amber: #F2CC8F;
+      --cred: #E74C3C;
+      --cdark: #B03A2E;
+      --pur1: #2C2C54;
+      --pur2: #474787;
+      --td: #1A2E1C;
+      --tm: #3D5940;
+      --tl: #7A9B80;
+      --brd: #D4E8D6;
+      --sh: rgba(27, 67, 50, 0.12);
+      --fh: 'Playfair Display', serif;
+      --fb: 'Nunito', sans-serif;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #111;
+      font-family: var(--fb);
+    }
+
+    /* ─── PHONE WRAPPER ─── */
+    #app {
+      width: min(390px, 100vw);
+      height: min(844px, 100vh);
+      position: relative;
+      overflow: hidden;
+      margin: auto;
+      background: var(--cream);
+      border-radius: min(44px, 0px);
+      box-shadow: 0 40px 100px rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media(min-width:420px) {
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #app {
+        border-radius: 44px;
+        height: 844px;
+      }
+    }
+
+    /* ─── SCREENS ─── */
+    .scr {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .scr.show {
+      display: flex;
+    }
+
+    /* ─── OVERLAY / TOAST ─── */
+    #ov {
+      position: absolute;
+      inset: 0;
+      z-index: 999;
+      background: rgba(27, 67, 50, 0.9);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s;
+    }
+
+    #ov.on {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    #ov .sp {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255, 255, 255, 0.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+
+    #ov .om {
+      color: #fff;
+      margin-top: 14px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    #tst {
+      position: absolute;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%) translateY(12px);
+      background: rgba(20, 40, 20, 0.95);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 9999;
+      transition: all .25s cubic-bezier(.34, 1.56, .64, 1);
+      white-space: nowrap;
+    }
+
+    #tst.on {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ─── STATUS BAR ─── */
+    .sb {
+      height: 44px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .sb .tm,
+    .sb span {
+      display: none !important;
+    }
+
+    /* ─── BUTTONS ─── */
+    .btnG {
+      width: 100%;
+      background: linear-gradient(135deg, var(--sage), var(--forest));
+      color: #fff;
+      border: none;
+      border-radius: 18px;
+      padding: 17px;
+      font-family: var(--fb);
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 8px 28px rgba(82, 183, 136, 0.38);
+      transition: transform .15s;
+    }
+
+    .btnG:active {
+      transform: scale(.98);
+    }
+
+    /* ─── TOGGLE ─── */
+    .tog {
+      width: 50px;
+      height: 28px;
+      background: var(--brd);
+      border-radius: 50px;
+      cursor: pointer;
+      position: relative;
+      transition: background .3s;
+      flex-shrink: 0;
+    }
+
+    .tog.on {
+      background: var(--sage);
+    }
+
+    .tog::after {
+      content: '';
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      background: #fff;
+      border-radius: 50%;
+      top: 3px;
+      left: 3px;
+      transition: transform .3s;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    }
+
+    .tog.on::after {
+      transform: translateX(22px);
+    }
+
+    /* ─── TABNAV ─── */
+    .tnav {
+      background: #fff;
+      border-top: 1px solid var(--brd);
+      padding: 8px 4px 18px;
+      display: flex;
+      justify-content: space-around;
+      flex-shrink: 0;
+    }
+
+    .ti {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 14px;
+      transition: background .15s;
+      min-width: 58px;
+      position: relative;
+    }
+
+    .ti:active {
+      background: var(--mint);
+    }
+
+    .ico {
+      font-size: 22px;
+      color: var(--tl);
+    }
+
+    .lbl {
+      font-size: 10px;
+      color: var(--tl);
+      font-weight: 600;
+    }
+
+    .ti.act .ico {
+      color: var(--sage);
+    }
+
+    .ti.act .lbl {
+      color: var(--sage);
+      font-weight: 800;
+    }
+
+    .bdg::after {
+      content: '';
+      position: absolute;
+      top: 4px;
+      right: 9px;
+      width: 8px;
+      height: 8px;
+      background: var(--terra);
+      border-radius: 50%;
+      border: 2px solid #fff;
+    }
+
+    /* ─── ANIM ─── */
+    @keyframes fu {
+      from {
+        opacity: 0;
+        transform: translateY(20px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    .a {
+      animation: fu .4s ease both;
+    }
+
+    .d1 {
+      animation-delay: .07s
+    }
+
+    .d2 {
+      animation-delay: .14s
+    }
+
+    .d3 {
+      animation-delay: .21s
+    }
+
+    .d4 {
+      animation-delay: .28s
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━
+   SPLASH
+━━━━━━━━━━━━━━━━━━━━━━━━ */
+    #splash {
+      background: linear-gradient(155deg, #1B4332 0%, #2D6A4F 45%, #52B788 100%);
+      align-items: center;
+      justify-content: center;
+    }
+
+    .leaf {
+      position: absolute;
+      border-radius: 50% 0 50% 0;
+      background: rgba(255, 255, 255, 0.06);
+      animation: sw 7s ease-in-out infinite;
+    }
+
+    @keyframes sw {
+
+      0%,
+      100% {
+        transform: rotate(0) scale(1)
+      }
+
+      50% {
+        transform: rotate(10deg) scale(1.06)
+      }
+    }
+
+    .slogo {
+      text-align: center;
+      z-index: 1;
+    }
+
+    .sico {
+      width: 92px;
+      height: 92px;
+      border-radius: 28px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.08));
+      backdrop-filter: blur(20px);
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 18px;
+      font-size: 46px;
+    }
+
+    .stit {
+      font-family: var(--fh);
+      font-size: 32px;
+      color: #fff;
+      font-weight: 700;
+      margin-bottom: 7px;
+    }
+
+    .stag {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.65);
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+
+    .sbot {
+      position: absolute;
+      bottom: 52px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      z-index: 1;
+    }
+
+    .sbt {
+      background: #fff;
+      color: var(--forest);
+      border: none;
+      border-radius: 50px;
+      padding: 16px 44px;
+      font-family: var(--fb);
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 10px 36px rgba(0, 0, 0, 0.22);
+      transition: transform .15s;
+    }
+
+    .sbt:active {
+      transform: scale(.97);
+    }
+
+    .snote {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 12px;
+      margin-top: 13px;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━
+   LOGIN
+━━━━━━━━━━━━━━━━━━━━━━━━ */
+    #login {
+      background: var(--cream);
+      overflow-y: auto;
+    }
+
+    .lhero {
+      background: linear-gradient(155deg, var(--forest), var(--fmid));
+      padding: 0 28px 44px;
+      border-radius: 0 0 44px 44px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .lbody {
+      padding: 28px 24px;
+    }
+
+    .flbl {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--tm);
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .prow {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+
+    .cc {
+      background: #fff;
+      border: 2px solid var(--brd);
+      border-radius: 16px;
+      padding: 14px;
+      font-family: var(--fb);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--td);
+      width: 92px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pi {
+      flex: 1;
+      background: #fff;
+      border: 2px solid var(--brd);
+      border-radius: 16px;
+      padding: 14px 18px;
+      font-family: var(--fb);
+      font-size: 16px;
+      color: var(--td);
+      outline: none;
+      transition: border-color .2s;
+    }
+
+    .pi:focus {
+      border-color: var(--sage);
+    }
+
+    #osec {
+      display: none;
+    }
+
+    .otpr {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin: 20px 0;
+    }
+
+    .ob {
+      width: 56px;
+      height: 64px;
+      border: 2px solid var(--brd);
+      border-radius: 16px;
+      text-align: center;
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--td);
+      background: #fff;
+      outline: none;
+      transition: all .2s;
+      font-family: var(--fb);
+    }
+
+    .ob:focus {
+      border-color: var(--sage);
+      box-shadow: 0 0 0 3px rgba(82, 183, 136, 0.15);
+    }
+
+    .ob.ok {
+      border-color: var(--sage);
+      background: var(--mint);
+    }
+
+    .disc {
+      font-size: 12px;
+      color: var(--tl);
+      text-align: center;
+      margin-top: 18px;
+      line-height: 1.7;
+    }
+
+    .rsd {
+      text-align: center;
+      margin-top: 14px;
+      font-size: 13px;
+      color: var(--tl);
+    }
+
+    .rsd span {
+      color: var(--sage);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━
+   LANGUAGE
+━━━━━━━━━━━━━━━━━━━━━━━━ */
+    #lang {
+      background: var(--cream);
+      overflow-y: auto;
+    }
+
+    .lhd {
+      padding: 12px 24px 20px;
+    }
+
+    .ltit {
+      font-family: var(--fh);
+      font-size: 26px;
+      color: var(--td);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .lsub {
+      font-size: 14px;
+      color: var(--tl);
+      line-height: 1.65;
+    }
+
+    .lgr {
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .lc {
+      background: #fff;
+      border: 2.5px solid var(--brd);
+      border-radius: 20px;
+      padding: 18px 14px;
+      cursor: pointer;
+      transition: all .2s;
+      text-align: center;
+      box-shadow: 0 2px 12px var(--sh);
+    }
+
+    .lc:active {
+      transform: scale(.97);
+    }
+
+    .lc.s {
+      border-color: var(--sage);
+      background: var(--mint);
+    }
+
+    .lft {
+      padding: 20px 24px 30px;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━
+   HOME
+━━━━━━━━━━━━━━━━━━━━━━━━ */
+    #home {
+      background: var(--cream);
+    }
+
+    .hhr {
+      background: linear-gradient(155deg, var(--forest), var(--fmid));
+      padding: 0 22px 22px;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .hhr::after {
+      content: '🌿';
+      position: absolute;
+      right: 14px;
+      top: 44px;
+      font-size: 90px;
+      opacity: .12;
+      pointer-events: none;
+    }
+
+    .htop {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 16px;
+    }
+
+    .hgreet {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.65);
+      font-weight: 600;
+      margin-bottom: 3px;
+    }
+
+    .hname {
+      font-family: var(--fh);
+      font-size: 22px;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .nbt {
+      background: rgba(255, 255, 255, 0.14);
+      border: none;
+      border-radius: 14px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      position: relative;
+    }
+
+    .nbt::after {
+      content: '';
+      position: absolute;
+      top: 7px;
+      right: 8px;
+      width: 7px;
+      height: 7px;
+      background: var(--terra);
+      border-radius: 50%;
+      border: 1.5px solid rgba(27, 67, 50, 0.8);
+    }
+
+    .mpill {
+      background: rgba(255, 255, 255, 0.14);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 13px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mpe {
+      font-size: 34px;
+    }
+
+    .mpi {
+      flex: 1;
+    }
+
+    .mpil {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.6);
+      font-weight: 700;
+      letter-spacing: .5px;
+    }
+
+    .mpiv {
+      font-size: 15px;
+      color: #fff;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .mupd {
+      background: rgba(255, 255, 255, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #fff;
+      border-radius: 12px;
+      padding: 8px 12px;
+      font-family: var(--fb);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .hsc {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px 20px 0;
+      scrollbar-width: none;
+    }
+
+    .hsc::-webkit-scrollbar {
+      display: none;
+    }
+
+    .stcard {
+      background: linear-gradient(135deg, #FFF8E7, #FFF0CC);
+      border: 1.5px solid var(--amber);
+      border-radius: 20px;
+      padding: 13px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .stnum {
+      font-size: 22px;
+      font-weight: 800;
+      color: #E67E22;
+      font-family: var(--fh);
+    }
+
+    .stlbl {
+      font-size: 11px;
+      color: #A04000;
+      font-weight: 700;
+    }
+
+    .sectit {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--tl);
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .qgr {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 11px;
+      margin-bottom: 18px;
+    }
+
+    .qc {
+      background: #fff;
+      border-radius: 20px;
+      padding: 16px;
+      cursor: pointer;
+      box-shadow: 0 4px 16px var(--sh);
+      transition: transform .15s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .qc:active {
+      transform: scale(.96);
+    }
+
+    .qbg {
+      position: absolute;
+      inset: 0;
+      border-radius: 20px;
+    }
+
+    .qico {
+      font-size: 30px;
+      margin-bottom: 9px;
+      display: block;
+      position: relative;
+    }
+
+    .qtit {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--td);
+      position: relative;
+    }
+
+    .qsub {
+      font-size: 11px;
+      color: var(--tl);
+      margin-top: 2px;
+      position: relative;
+    }
+
+    .aiban {
+      background: linear-gradient(135deg, var(--forest), var(--fmid));
+      border-radius: 22px;
+      padding: 20px;
+      margin-bottom: 18px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 32px rgba(27, 67, 50, 0.3);
+      transition: transform .15s;
+    }
+
+    .aiban:active {
+      transform: scale(.985);
+    }
+
+    .aiban::after {
+      content: '💬';
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 52px;
+      opacity: .18;
+    }
+
+    .aibadge {
+      font-size: 10px;
+      color: var(--sagl);
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      margin-bottom: 5px;
+    }
+
+    .aitit {
+      font-family: var(--fh);
+      font-size: 19px;
+      color: #fff;
+      margin-bottom: 5px;
+    }
+
+    .aisub {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.65);
+      line-height: 1.5;
+    }
+
+    .aicta {
+      margin-top: 13px;
+      background: #fff;
+      color: var(--forest);
+      border: none;
+      border-radius: 50px;
+      padding: 9px 20px;
+      font-family: var(--fb);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .medc {
+      background: linear-gradient(135deg, #EBF5FB, #D4E6F1);
+      border-radius: 20px;
+      padding: 16px 18px;
+      margin-bottom: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: transform .15s;
+    }
+
+    .medc:active {
+      transform: scale(.98);
+    }
+
+    .srow {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .sbox {
+      flex: 1;
+      background: #fff;
+      border-radius: 16px;
+      padding: 13px 10px;
+      text-align: center;
+      box-shadow: 0 2px 10px var(--sh);
+    }
+
+    .snum {
+      font-family: var(--fh);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--forest);
+    }
+
+    .slbl {
+      font-size: 11px;
+      color: var(--tl);
+      margin-top: 2px;
+      font-weight: 600;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━
+   CHAT
+━━━━━━━━━━━━━━━━━━━━━━━━ */
+    #chat {
+      background: var(--cream);
+    }
+
+    .chdr {
+      background: linear-gradient(135deg, var(--forest), var(--fmid));
+      padding: 0 16px 16px;
+      flex-shrink: 0;
+    }
+
+    .cbk {
+      background: rgba(255, 255, 255, 0.14);
+      border: none;
+      border-radius: 12px;
+      width: 38px;
+      height: 38px;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .cav {
+      width: 44px;
+      height: 44px;
+      border-radius: 13px;
+      background: rgba(255, 255, 255, 0.18);
+      border: 2px solid rgba(255, 255, 255, 0.28);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .caist {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.65);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 2px;
+    }
+
+    .sdot {
+      width: 7px;
+      height: 7px;
+      background: var(--sagl);
+      border-radius: 50%;
+      animation: blink 2s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .35
+      }
+    }
+
+    .disc2 {
+      background: linear-gradient(135deg, rgba(82, 183, 136, 0.1), rgba(27, 67, 50, 0.05));
+      border-left: 3px solid var(--sage);
+      margin: 10px 12px;
+      padding: 9px 13px;
+      border-radius: 0 12px 12px 0;
+      font-size: 12px;
+      color: var(--tm);
+      line-height: 1.55;
+      flex-shrink: 0;
+    }
+
+    .cmsgs {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 12px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      scrollbar-width: none;
+    }
+
+    .cmsgs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .msg {
+      max-width: 82%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .msg.ai {
+      align-self: flex-start;
+    }
+
+    .msg.me {
+      align-self: flex-end;
+    }
+
+    .mb {
+      padding: 11px 14px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--td);
+    }
+
+    .msg.ai .mb {
+      background: #fff;
+      border-radius: 4px 18px 18px 18px;
+      box-shadow: 0 2px 12px var(--sh);
+    }
+
+    .msg.me .mb {
+      background: linear-gradient(135deg, var(--sage), #40916C);
+      color: #fff;
+      border-radius: 18px 4px 18px 18px;
+    }
+
+    .mt {
+      font-size: 10px;
+      color: var(--tl);
+      margin-top: 4px;
+      padding: 0 3px;
+    }
+
+    .msg.me .mt {
+      text-align: right;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .typi {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      padding: 12px 14px;
+      background: #fff;
+      border-radius: 4px 18px 18px 18px;
+      box-shadow: 0 2px 12px var(--sh);
+      width: fit-content;
+      align-self: flex-start;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--sagl);
+      animation: bou 1.4s infinite;
+    }
+
+    .dot:nth-child(2) {
+      animation-delay: .2s
+    }
+
+    .dot:nth-child(3) {
+      animation-delay: .4s
+    }
+
+    @keyframes bou {
+
+      0%,
+      100% {
+        transform: translateY(0)
+      }
+
+      50% {
+        transform: translateY(-7px)
+      }
+    }
+
+    .cribx {
+      margin: 0 12px 8px;
+      background: linear-gradient(135deg, #FFF3F0, #FFE8E3);
+      border: 1.5px solid var(--terra);
+      border-radius: 14px;
+      padding: 12px 14px;
+      flex-shrink: 0;
+      display: none;
+    }
+
+    .crtit {
+      font-size: 13px;
+      font-weight: 800;
+      color: #C0392B;
+      margin-bottom: 8px;
+    }
+
+    .crbt {
+      background: var(--terra);
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      padding: 8px 13px;
+      font-family: var(--fb);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-right: 7px;
+      margin-bottom: 5px;
+    }
+
+    .cinp {
+      padding: 10px 12px 18px;
+      background: #fff;
+      border-top: 1px solid var(--brd);
+      display: flex;
+      gap: 9px;
+      align-items: flex-end;
+      flex-shrink: 0;
+    }
+
+    .cta {
+      flex: 1;
+      background: var(--cream);
+      border: 2px solid var(--brd);
+      border-radius: 18px;
+      padding: 11px 14px;
+      font-family: var(--fb);
+      font-size: 14px;
+      color: var(--td);
+      outline: none;
+      resize: none;
+      max-height: 100px;
+      transition: border-color .2s;
+      line-height: 1.5;
+    }
+
+    .cta:focus {
+      border-color: var(--sage);
+    }
+
+    .sndbtn {
+      width: 44px;
+      height: 44px;
+      border-radius: 13px;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, var(--sage), var(--forest));
+      border: none;
+      cursor: pointer;
+      color: #fff;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(82, 183, 136, 0.42);
+      transition: transform .15s;
+    }
+
+    .sndbtn:active {
+      transform: scale(.92);
+    }
+
+    .sndbtn:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━
+   MOOD
+━━━━━━━━━━━━━━━━━━━━━━━━ */
+    #mood {
+      background: var(--cream);
+    }
+
+    .mhr {
+      background: linear-gradient(155deg, var(--forest), var(--fmid));
+      padding: 0 22px 26px;
+      flex-shrink: 0;
+    }
+
+    .mbdy {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px 20px;
+      scrollbar-width: none;
+    }
+
+    .mbdy::-webkit-scrollbar {
+      display: none;
+    }
+
+    .cichk {
+      background: #fff;
+      border-radius: 22px;
+      padding: 20px;
+      box-shadow: 0 4px 18px var(--sh);
+      margin-bottom: 16px;
+    }
+
+    .citit {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--td);
+      margin-bottom: 14px;
+    }
+
+    .memj {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .mbtn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      padding: 9px 5px;
+      border-radius: 13px;
+      transition: all .2s;
+      border: 2px solid transparent;
+      background: transparent;
+    }
+
+    .mbtn:active {
+      transform: scale(.94);
+    }
+
+    .mbtn.s {
+      background: var(--mint);
+      border-color: var(--sage);
+    }
+
+    .me2 {
+      font-size: 28px;
+    }
+
+    .mlbl {
+      font-size: 10px;
+      color: var(--tl);
+      font-weight: 700;
+    }
+
+    .chcard {
+      background: #fff;
+      border-radius: 22px;
+      padding: 20px;
+      box-shadow: 0 4px 18px var(--sh);
+      margin-bottom: 16px;
+    }
+
+    .bchart {
+      display: flex;
+      align-items: flex-end;
+      gap: 7px;
+      height: 105px;
+    }
+
+    .bcol {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .bar {
+      width: 100%;
+      border-radius: 7px 7px 0 0;
+      background: linear-gradient(180deg, var(--sagl), var(--sage));
+      min-height: 5px;
+      transition: height .4s;
+    }
+
+    .bar.td {
+      background: linear-gradient(180deg, #F1948A, var(--terra));
+    }
+
+    .bday {
+      font-size: 10px;
+      color: var(--tl);
+      font-weight: 700;
+    }
+
+    .bday.td {
+      color: var(--terra);
+    }
+
+    .icard {
+      border-radius: 18px;
+      padding: 14px 16px;
+      margin-bottom: 11px;
+      display: flex;
+      gap: 13px;
+      align-items: flex-start;
+      cursor: pointer;
+    }
+
+    .icard.g {
+      background: linear-gradient(135deg, var(--mint), #B7E4C7);
+    }
+
+    .icard.o {
+      background: linear-gradient(135deg, #FFF0E6, #FFE0CC);
+    }
+
+    .icard.b {
+      background: linear-gradient(135deg, #EBF5FB, #D4E6F1);
+    }
+
+    .itit {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--td);
+      margin-bottom: 3px;
+    }
+
+    .isub {
+      font-size: 12px;
+      color: var(--tm);
+      line-height: 1.5;
+    }
+
+    .pdfbt {
+      width: 100%;
+      background: linear-gradient(135deg, var(--forest), var(--fmid));
+      color: #fff;
+      border: none;
+      border-radius: 17px;
+      padding: 16px;
+      font-family: var(--fb);
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 6px 20px rgba(27, 67, 50, 0.28);
+      margin-bottom: 20px;
+    }
+
+    .pdfbt:active {
+      transform: scale(.98);
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━
+   CRISIS
+━━━━━━━━━━━━━━━━━━━━━━━━ */
+    #crisis {
+      background: var(--cream);
+    }
+
+    .krhr {
+      background: linear-gradient(155deg, var(--cdark), var(--cred));
+      padding: 0 22px 26px;
+      flex-shrink: 0;
+    }
+
+    .krbd {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px 20px;
+      scrollbar-width: none;
+    }
+
+    .krbd::-webkit-scrollbar {
+      display: none;
+    }
+
+    .krban {
+      background: linear-gradient(135deg, #FFF3F0, #FFE8E3);
+      border: 1.5px solid #FAAAA0;
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .hlc {
+      background: #fff;
+      border-radius: 18px;
+      padding: 14px 16px;
+      margin-bottom: 11px;
+      box-shadow: 0 4px 14px var(--sh);
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      cursor: pointer;
+      transition: transform .15s;
+    }
+
+    .hlc:active {
+      transform: scale(.98);
+    }
+
+    .hlico {
+      width: 46px;
+      height: 46px;
+      border-radius: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .hlnm {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--td);
+    }
+
+    .hlnum {
+      font-size: 12px;
+      color: var(--tl);
+      margin-top: 2px;
+      font-weight: 600;
+    }
+
+    .cbt {
+      background: var(--terra);
+      color: #fff;
+      border: none;
+      border-radius: 11px;
+      padding: 9px 13px;
+      font-family: var(--fb);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .cbt:active {
+      transform: scale(.95);
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━
+   PREMIUM
+━━━━━━━━━━━━━━━━━━━━━━━━ */
+    #prem {
+      background: var(--cream);
+    }
+
+    .prhr {
+      background: linear-gradient(155deg, var(--pur1), var(--pur2));
+      padding: 0 22px 32px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .prbd {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px 20px;
+      scrollbar-width: none;
+      min-height: 0;
+    }
+
+    .prbd::-webkit-scrollbar {
+      display: none;
+    }
+
+    .plnc {
+      background: #fff;
+      border-radius: 22px;
+      padding: 20px;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 18px var(--sh);
+      border: 2.5px solid transparent;
+      cursor: pointer;
+      transition: all .15s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .plnc:active {
+      transform: scale(.98);
+    }
+
+    .plnc.pp {
+      border-color: var(--sage);
+    }
+
+    .pbdg {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: var(--sage);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 4px 11px;
+      border-radius: 50px;
+    }
+
+    .plnh {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      margin-bottom: 14px;
+    }
+
+    .plnn {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--td);
+    }
+
+    .plnp {
+      font-size: 13px;
+      color: var(--tl);
+      margin-top: 2px;
+    }
+
+    .plnp strong {
+      font-size: 19px;
+      color: var(--sage);
+      font-family: var(--fh);
+      font-weight: 800;
+    }
+
+    .feats {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .feat {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--tm);
+    }
+
+    .feat::before {
+      content: '✓';
+      color: var(--sage);
+      font-weight: 900;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .pbtn {
+      width: 100%;
+      margin-top: 16px;
+      border: none;
+      border-radius: 14px;
+      padding: 13px;
+      font-family: var(--fb);
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .pbtn:active {
+      transform: scale(.98);
+    }
+
+    .pbtn.g {
+      background: linear-gradient(135deg, var(--sage), var(--forest));
+      color: #fff;
+      box-shadow: 0 6px 18px rgba(82, 183, 136, 0.36);
+    }
+
+    .pbtn.m {
+      background: var(--mint);
+      color: var(--forest);
+    }
+
+    .pbtn.o {
+      background: transparent;
+      border: 2px solid var(--brd);
+      color: var(--td);
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━
+   SETTINGS
+━━━━━━━━━━━━━━━━━━━━━━━━ */
+    #sett {
+      background: var(--cream);
+    }
+
+    .sthr {
+      background: linear-gradient(135deg, var(--forest), var(--fmid));
+      padding: 0 22px 22px;
+      flex-shrink: 0;
+    }
+
+    .stbd {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px 20px;
+      scrollbar-width: none;
+    }
+
+    .stbd::-webkit-scrollbar {
+      display: none;
+    }
+
+    .pfc {
+      background: #fff;
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: 0 4px 18px var(--sh);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .pfav {
+      width: 60px;
+      height: 60px;
+      border-radius: 17px;
+      background: var(--mint);
+      border: 2px solid var(--sagl);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+
+    .pfn {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--td);
+    }
+
+    .pfph {
+      font-size: 13px;
+      color: var(--tl);
+      margin-top: 2px;
+    }
+
+    .pfpl {
+      font-size: 12px;
+      color: var(--sage);
+      font-weight: 700;
+      margin-top: 3px;
+    }
+
+    .pfe {
+      background: var(--mint);
+      border: none;
+      border-radius: 11px;
+      padding: 8px 14px;
+      font-family: var(--fb);
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--forest);
+      cursor: pointer;
+      margin-left: auto;
+    }
+
+    .sgrp {
+      margin-bottom: 20px;
+    }
+
+    .sgt {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--tl);
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      margin-bottom: 9px;
+      padding-left: 3px;
+    }
+
+    .slist {
+      background: #fff;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px var(--sh);
+    }
+
+    .sr {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--brd);
+      cursor: pointer;
+      transition: background .15s;
+    }
+
+    .sr:last-child {
+      border-bottom: none;
+    }
+
+    .sr:active {
+      background: var(--mint);
+    }
+
+    .sric {
+      font-size: 19px;
+      width: 28px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .srb {
+      flex: 1;
+    }
+
+    .srl {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--td);
+    }
+
+    .srs {
+      font-size: 12px;
+      color: var(--tl);
+      margin-top: 2px;
+    }
+
+    .sra {
+      color: var(--tl);
+      font-size: 18px;
+    }
+
+    .srd .srl {
+      color: var(--cred);
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━
+   ELDERLY
+━━━━━━━━━━━━━━━━━━━━━━━━ */
+    body.el .cta,
+    body.el .mb,
+    body.el .hlnm,
+    body.el .feat,
+    body.el .srl {
+      font-size: 17px !important;
+    }
+
+    body.el .ico {
+      font-size: 27px;
+    }
+
+    body.el .lbl {
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    body.el .btnG {
+      font-size: 18px;
+      padding: 19px;
+    }
+
+    body.el .sndbtn {
+      width: 52px;
+      height: 52px;
+    }
+
+    body.el .ob {
+      width: 62px;
+      height: 70px;
+      font-size: 28px;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━
+   HISTORY
+━━━━━━━━━━━━━━━━━━━━━━━━ */
+    #hist {
+      background: var(--cream);
+    }
+
+    .hlist {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+      scrollbar-width: none;
+    }
+
+    .hlist::-webkit-scrollbar {
+      display: none;
+    }
+
+    .hcard {
+      background: #fff;
+      border-radius: 20px;
+      padding: 14px 16px;
+      margin-bottom: 11px;
+      box-shadow: 0 3px 14px var(--sh);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: transform .15s;
+    }
+
+    .hcard:active {
+      transform: scale(.98);
+    }
+
+    .hico {
+      width: 44px;
+      height: 44px;
+      border-radius: 13px;
+      background: var(--mint);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .htit {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--td);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .hdate {
+      font-size: 11px;
+      color: var(--tl);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .hprev {
+      font-size: 12px;
+      color: var(--tm);
+      margin-top: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .hdel {
+      background: rgba(231, 76, 60, 0.08);
+      border: none;
+      border-radius: 10px;
+      width: 34px;
+      height: 34px;
+      font-size: 15px;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .15s;
+    }
+
+    .hdel:active {
+      background: rgba(231, 76, 60, 0.2);
+    }
+
+    .hempty {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--tl);
+    }
+
+    .hempty .hei {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    .hempty .het {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--td);
+      margin-bottom: 6px;
+    }
+
+    .hempty .hes {
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    #paym {
+      background: var(--cream);
+    }
+
+    .pyhr {
+      background: linear-gradient(155deg, #2C3E50, #34495E);
+      padding: 0 22px 26px;
+      flex-shrink: 0;
+    }
+
+    .pmth {
+      background: #fff;
+      border-radius: 18px;
+      padding: 16px 18px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 14px var(--sh);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: transform .15s;
+      border: 2px solid transparent;
+    }
+
+    .pmth:active {
+      transform: scale(.98);
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+
+    <!-- OVERLAY -->
+    <div id="ov">
+      <div class="sp"></div>
+      <div class="om" id="om">Please wait...</div>
+    </div>
+    <!-- TOAST -->
+    <div id="tst"></div>
+
+    <!-- ══════════ SPLASH ══════════ -->
+    <div class="scr show" id="splash" style="align-items:center;justify-content:center;">
+      <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;">
+        <div class="leaf" style="width:130px;height:130px;top:-30px;left:-25px;"></div>
+        <div class="leaf" style="width:85px;height:85px;top:100px;right:-10px;animation-delay:1.2s"></div>
+        <div class="leaf" style="width:165px;height:165px;bottom:-40px;right:-30px;animation-delay:2s"></div>
+        <div class="leaf" style="width:90px;height:90px;bottom:155px;left:-20px;animation-delay:.6s"></div>
+      </div>
+      <div class="slogo a">
+        <div class="sico">🤍</div>
+        <div class="stit">TrueCompanion</div>
+        <div class="stag">AI MENTAL HEALTH · INDIA'S FIRST</div>
+      </div>
+      <div class="sbot a d3">
+        <button class="sbt" onclick="chkLg()">Get Started →</button>
+        <div class="snote">Free · No judgment · 24/7 available</div>
+      </div>
+    </div>
+
+    <!-- ══════════ LOGIN ══════════ -->
+    <div class="scr" id="login">
+      <div class="lhero">
+        <div class="sb" style="color:#fff;"><span class="tm">9:41</span><span>📶🔋</span></div>
+        <div style="text-align:center;padding-top:6px;">
+          <span style="font-size:52px;display:block;margin-bottom:10px;">👋</span>
+          <div style="font-family:var(--fh);font-size:26px;color:#fff;font-weight:700;margin-bottom:5px;">Welcome Back!
+          </div>
+          <div style="font-size:13px;color:rgba(255,255,255,.65);line-height:1.6;">OTP se login karo — koi password nahi
+          </div>
+        </div>
+      </div>
+      <div class="lbody">
+        <div id="psec">
+          <label class="flbl">👤 Name</label>
+          <div class="prow">
+            <input class="pi" type="text" id="pname" placeholder="Enter your name"
+              onkeydown="if(event.key==='Enter')document.getElementById('pi').focus()">
+          </div>
+          <label class="flbl">📱 Mobile Number</label>
+          <div class="prow">
+            <div class="cc">🇮🇳 +91</div>
+            <input class="pi" type="tel" id="pi" placeholder="10-digit number" maxlength="10" inputmode="numeric"
+              onkeydown="if(event.key==='Enter')sOTP()">
+          </div>
+          <button class="btnG" onclick="sOTP()">Send OTP →</button>
+          <div class="disc">Continue karne se aap hamare Terms &amp; Privacy se agree karte ho.<br>Data encrypted hai —
+            kabhi share nahi hoga.</div>
+        </div>
+        <div id="osec">
+          <label class="flbl">🔐 OTP Enter Karo <span id="otpDemoText" style="color:var(--sage);">(Demo: 1 2 3
+              4)</span></label>
+          <div class="otpr">
+            <input class="ob" type="tel" id="o1" maxlength="1" inputmode="numeric" oninput="oi(this,'o2')"
+              onkeydown="ob2(event,this,null)">
+            <input class="ob" type="tel" id="o2" maxlength="1" inputmode="numeric" oninput="oi(this,'o3')"
+              onkeydown="ob2(event,this,'o1')">
+            <input class="ob" type="tel" id="o3" maxlength="1" inputmode="numeric" oninput="oi(this,'o4')"
+              onkeydown="ob2(event,this,'o2')">
+            <input class="ob" type="tel" id="o4" maxlength="1" inputmode="numeric" oninput="oi(this,null)"
+              onkeydown="ob2(event,this,'o3')">
+          </div>
+          <button class="btnG" onclick="vOTP()">Verify &amp; Continue ✓</button>
+          <div class="rsd">OTP nahi aaya? <span onclick="T('📱 OTP resend ho gaya!')">Resend karo</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ LANGUAGE ══════════ -->
+    <div class="scr" id="lang">
+      <div class="sb" style="color:var(--td);"><span class="tm" style="color:var(--td);">9:41</span><span>📶🔋</span>
+      </div>
+      <div class="lhd a">
+        <div class="ltit">Apni Language Chuniye 🌏</div>
+        <div class="lsub">TrueCompanion us language mein baat karega jisme aap comfortable ho.</div>
+      </div>
+      <div class="lgr">
+        <div class="lc a d1 s" onclick="sL(this,'Hinglish')"><span
+            style="font-size:28px;display:block;margin-bottom:7px;">🇮🇳</span>
+          <div style="font-size:14px;font-weight:800;color:var(--td);">Hinglish</div>
+          <div style="font-size:12px;color:var(--tl);margin-top:2px;">हिंग्लिश</div>
+        </div>
+        <div class="lc a d1" onclick="sL(this,'Hindi')"><span
+            style="font-size:28px;display:block;margin-bottom:7px;">📖</span>
+          <div style="font-size:14px;font-weight:800;color:var(--td);">Hindi</div>
+          <div style="font-size:12px;color:var(--tl);margin-top:2px;">हिंदी</div>
+        </div>
+        <div class="lc a d2" onclick="sL(this,'English')"><span
+            style="font-size:28px;display:block;margin-bottom:7px;">🇬🇧</span>
+          <div style="font-size:14px;font-weight:800;color:var(--td);">English</div>
+          <div style="font-size:12px;color:var(--tl);margin-top:2px;">English</div>
+        </div>
+        <div class="lc a d2" onclick="sL(this,'Tamil')"><span
+            style="font-size:28px;display:block;margin-bottom:7px;">🌴</span>
+          <div style="font-size:14px;font-weight:800;color:var(--td);">Tamil</div>
+          <div style="font-size:12px;color:var(--tl);margin-top:2px;">தமிழ்</div>
+        </div>
+        <div class="lc a d3" onclick="sL(this,'Bengali')"><span
+            style="font-size:28px;display:block;margin-bottom:7px;">🐟</span>
+          <div style="font-size:14px;font-weight:800;color:var(--td);">Bengali</div>
+          <div style="font-size:12px;color:var(--tl);margin-top:2px;">বাংলা</div>
+        </div>
+        <div class="lc a d3" onclick="sL(this,'Telugu')"><span
+            style="font-size:28px;display:block;margin-bottom:7px;">🌺</span>
+          <div style="font-size:14px;font-weight:800;color:var(--td);">Telugu</div>
+          <div style="font-size:12px;color:var(--tl);margin-top:2px;">తెలుగు</div>
+        </div>
+        <div class="lc a d4" onclick="sL(this,'Marathi')"><span
+            style="font-size:28px;display:block;margin-bottom:7px;">🏛️</span>
+          <div style="font-size:14px;font-weight:800;color:var(--td);">Marathi</div>
+          <div style="font-size:12px;color:var(--tl);margin-top:2px;">मराठी</div>
+        </div>
+        <div class="lc a d4" onclick="sL(this,'Punjabi')"><span
+            style="font-size:28px;display:block;margin-bottom:7px;">🌾</span>
+          <div style="font-size:14px;font-weight:800;color:var(--td);">Punjabi</div>
+          <div style="font-size:12px;color:var(--tl);margin-top:2px;">ਪੰਜਾਬੀ</div>
+        </div>
+      </div>
+      <div class="lft"><button class="btnG" onclick="wl(700,'Setup ho raha hai...',()=>G('home'))">Continue →</button>
+      </div>
+    </div>
+
+    <!-- ══════════ HOME ══════════ -->
+    <div class="scr" id="home">
+      <div class="hhr">
+        <div class="sb htop" style="color:#fff;height:auto;padding:10px 0 0;">
+          <div>
+            <div class="hgreet">Namaste, Rahul 🙏</div>
+            <div class="hname">Aaj kaisa feel kar rahe ho?</div>
+          </div>
+          <button class="nbt" onclick="T('🔔 Koi new notification nahi!')">🔔</button>
+        </div>
+        <div class="mpill" style="margin-top:12px;">
+          <div class="mpe" id="hme">😊</div>
+          <div class="mpi">
+            <div class="mpil">TODAY'S MOOD</div>
+            <div class="mpiv" id="hmv">Feeling Good</div>
+          </div>
+          <button class="mupd" onclick="G('mood')">Update</button>
+        </div>
+      </div>
+      <div class="hsc">
+        <div class="stcard a">
+          <div style="font-size:32px;">🔥</div>
+          <div>
+            <div class="stnum"><span id="sc">7</span> Days</div>
+            <div class="stlbl">Wellness Streak!</div>
+          </div>
+        </div>
+        <div class="sectit">Quick Actions</div>
+        <div class="qgr a d1">
+          <div class="qc" onclick="G('chat')">
+            <div class="qbg" style="background:linear-gradient(135deg,rgba(82,183,136,0.08),rgba(27,67,50,0.04))"></div>
+            <span class="qico">💬</span>
+            <div class="qtit">Talk to AI</div>
+            <div class="qsub">Share what's on mind</div>
+          </div>
+          <div class="qc" onclick="G('mood')">
+            <div class="qbg" style="background:linear-gradient(135deg,rgba(224,122,95,0.08),rgba(242,204,143,0.04))">
+            </div><span class="qico">📊</span>
+            <div class="qtit">Mood Log</div>
+            <div class="qsub">Track emotions</div>
+          </div>
+          <div class="qc" onclick="G('crisis')">
+            <div class="qbg" style="background:linear-gradient(135deg,rgba(231,76,60,0.07),rgba(192,57,43,0.03))"></div>
+            <span class="qico">🆘</span>
+            <div class="qtit">Crisis Help</div>
+            <div class="qsub">Emergency helplines</div>
+          </div>
+          <div class="qc" onclick="G('prem')">
+            <div class="qbg" style="background:linear-gradient(135deg,rgba(130,106,180,0.08),rgba(70,40,120,0.04))">
+            </div><span class="qico">⭐</span>
+            <div class="qtit">Go Premium</div>
+            <div class="qsub">Unlock all features</div>
+          </div>
+        </div>
+        <div class="aiban a d2" onclick="G('chat')">
+          <div class="aibadge">AI COMPANION · 24/7</div>
+          <div class="aitit">Ready to listen, always.</div>
+          <div class="aisub">Kuch bhi share karo — main judge nahi karunga. Hamesha hoon. 💚</div>
+          <button class="aicta">Start Chatting →</button>
+        </div>
+        <div class="medc a d3" onclick="opnMed()">
+          <div style="font-size:34px;">🧘</div>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:800;color:#1A5276;display:flex;align-items:center;gap:7px;">Daily
+              Meditation <span
+                style="background:#2E86C1;color:#fff;font-size:9px;padding:2px 8px;border-radius:50px;">PREMIUM</span>
+            </div>
+            <div style="font-size:12px;color:#2E86C1;margin-top:3px;">5-min mindfulness · Hindi mein</div>
+          </div>
+          <button
+            style="width:38px;height:38px;border-radius:50%;background:#2E86C1;border:none;color:#fff;cursor:pointer;font-size:15px;flex-shrink:0;">▶</button>
+        </div>
+        <div class="sectit">This Week</div>
+        <div class="srow a d3">
+          <div class="sbox">
+            <div class="snum">12</div>
+            <div class="slbl">AI Chats</div>
+          </div>
+          <div class="sbox">
+            <div class="snum">6.8</div>
+            <div class="slbl">Avg Mood</div>
+          </div>
+          <div class="sbox">
+            <div class="snum">3</div>
+            <div class="slbl">Reports</div>
+          </div>
+        </div>
+        <div style="height:16px;"></div>
+      </div>
+      <div class="tnav">
+        <div class="ti act" data-s="home">
+          <div class="ico">🏠</div>
+          <div class="lbl">Home</div>
+        </div>
+        <div class="ti" data-s="chat">
+          <div class="ico bdg">💬</div>
+          <div class="lbl">Chat</div>
+        </div>
+        <div class="ti" data-s="mood">
+          <div class="ico">📊</div>
+          <div class="lbl">Mood</div>
+        </div>
+        <div class="ti" data-s="crisis">
+          <div class="ico">🆘</div>
+          <div class="lbl">Crisis</div>
+        </div>
+        <div class="ti" data-s="sett">
+          <div class="ico">⚙️</div>
+          <div class="lbl">Settings</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ HISTORY ══════════ -->
+    <div class="scr" id="hist">
+      <div class="chdr">
+        <div class="sb" style="color:#fff;position:absolute;top:0;left:0;right:0;height:44px;padding:0 16px;"><span
+            class="tm">9:41</span><span>📶🔋</span></div>
+        <div style="height:44px;"></div>
+        <div style="display:flex;align-items:center;gap:8px;width:100%;">
+          <button class="cbk" onclick="G('chat')">←</button>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:15px;font-weight:800;color:#fff;">Chat History</div>
+            <div class="caist" style="font-size:11px;"><span class="sdot" style="flex-shrink:0;"></span> <span>Purani
+                conversations</span></div>
+          </div>
+          <button class="cbk" onclick="clrAllSessions()" title="Clear All"
+            style="width:34px;height:34px;font-size:15px;background:rgba(231,76,60,0.25);">🗑️</button>
+        </div>
+      </div>
+      <div class="hlist" id="histList"></div>
+    </div>
+
+    <!-- ══════════ CHAT ══════════ -->
+    <div class="scr" id="chat">
+      <div class="chdr">
+        <div class="sb" style="color:#fff;position:absolute;top:0;left:0;right:0;height:44px;padding:0 16px;"><span
+            class="tm">9:41</span><span>📶🔋</span></div>
+        <div style="height:44px;"></div>
+        <div style="display:flex;align-items:center;gap:7px;width:100%;">
+          <button class="cbk" onclick="G('home')">←</button>
+          <div class="cav" style="width:38px;height:38px;font-size:18px;">🤍</div>
+          <div style="flex:1;min-width:0;">
+            <div
+              style="font-size:15px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              TrueCompanion AI</div>
+            <div class="caist" style="font-size:11px;"><span class="sdot" style="flex-shrink:0;"></span> <span
+                style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Always here for you</span></div>
+          </div>
+          <button class="cbk" onclick="nwCh()" title="New Chat"
+            style="width:34px;height:34px;font-size:15px;">✨</button>
+          <button class="cbk" onclick="G('hist')" title="History"
+            style="width:34px;height:34px;font-size:15px;">📚</button>
+          <button class="cbk" onclick="dlPDF()" title="Report"
+            style="width:34px;height:34px;font-size:15px;">📋</button>
+        </div>
+      </div>
+      <div class="disc2">🤖 <strong>I am an AI</strong> — par aapki baat sunne ke liye hamesha hoon, bina judgment ke.
+        💚</div>
+      <div class="cmsgs" id="cm">
+        <div class="msg ai">
+          <div class="mb">Namaste! 🙏 Aaj aap kaisa feel kar rahe ho? Kuch bhi share karo — main sun raha hoon, bilkul
+            safe hai yahan. 💚</div>
+          <div class="mt">9:41 AM</div>
+        </div>
+      </div>
+      <div class="cribx" id="cb">
+        <div class="crtit">❤️ Aap akele nahi hain — Help Available Hai</div>
+        <button class="crbt" onclick="cll('iCall','9152987821')">📞 iCall: 9152987821</button>
+        <button class="crbt" onclick="cll('AASRA','9820466627')">📞 AASRA: 9820466627</button>
+        <button class="crbt" onclick="cll('Kiran','18005990019')">📞 Kiran: 1800-599-0019</button>
+      </div>
+      <div class="cinp">
+        <button id="micBtn"
+          style="background:#fff;border:1px solid var(--brd);border-radius:12px;width:44px;height:44px;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-right:2px;"
+          onclick="tgMic()">🎤</button>
+        <textarea class="cta" id="ci" placeholder="Kuch bhi type karo..." rows="1" onkeydown="ck(event)"
+          oninput="ca(this)"></textarea>
+        <button class="sndbtn" id="sb" onclick="snd()">➤</button>
+      </div>
+    </div>
+
+    <!-- ══════════ MOOD ══════════ -->
+    <div class="scr" id="mood">
+      <div class="mhr">
+        <div class="sb" style="color:#fff;"><button onclick="G('home')"
+            style="background:rgba(255,255,255,.15);border:none;border-radius:11px;padding:7px 13px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fb);">←
+            Back</button><span class="tm">9:41</span></div>
+        <div style="font-family:var(--fh);font-size:24px;color:#fff;font-weight:700;margin-bottom:4px;">Mood Tracker 📊
+        </div>
+        <div style="font-size:13px;color:rgba(255,255,255,.65);">Apni feelings track karo</div>
+      </div>
+      <div class="mbdy">
+        <div class="cichk a">
+          <div class="citit">Aaj kaisa feel kar rahe ho?</div>
+          <div class="memj">
+            <button class="mbtn" data-e="😭" onclick="sM(this)"><span class="me2">😭</span><span class="mlbl">Very
+                Sad</span></button>
+            <button class="mbtn" data-e="😔" onclick="sM(this)"><span class="me2">😔</span><span
+                class="mlbl">Sad</span></button>
+            <button class="mbtn" data-e="😐" onclick="sM(this)"><span class="me2">😐</span><span
+                class="mlbl">Okay</span></button>
+            <button class="mbtn" data-e="😊" onclick="sM(this)"><span class="me2">😊</span><span
+                class="mlbl">Good</span></button>
+            <button class="mbtn" data-e="😄" onclick="sM(this)"><span class="me2">😄</span><span
+                class="mlbl">Great</span></button>
+          </div>
+        </div>
+        <div class="chcard a d1">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <div style="font-size:15px;font-weight:800;color:var(--td);">Weekly Graph</div>
+            <div style="font-size:12px;color:var(--tl);font-weight:600;">This Week</div>
+          </div>
+          <div class="bchart" id="mb">
+            <div class="bcol">
+              <div class="bar" style="height:60%"></div>
+              <div class="bday">Mon</div>
+            </div>
+            <div class="bcol">
+              <div class="bar" style="height:40%"></div>
+              <div class="bday">Tue</div>
+            </div>
+            <div class="bcol">
+              <div class="bar" style="height:75%"></div>
+              <div class="bday">Wed</div>
+            </div>
+            <div class="bcol">
+              <div class="bar" style="height:50%"></div>
+              <div class="bday">Thu</div>
+            </div>
+            <div class="bcol">
+              <div class="bar" style="height:85%"></div>
+              <div class="bday">Fri</div>
+            </div>
+            <div class="bcol">
+              <div class="bar" style="height:65%"></div>
+              <div class="bday">Sat</div>
+            </div>
+            <div class="bcol">
+              <div class="bar td" style="height:70%"></div>
+              <div class="bday td">Today</div>
+            </div>
+          </div>
+        </div>
+        <div class="sectit">AI Insights</div>
+        <div class="icard g a d2"><span style="font-size:26px;">💡</span>
+          <div>
+            <div class="itit">Pattern Detected</div>
+            <div class="isub">Mood weekdays mein low. Short walk try karo! 🚶</div>
+          </div>
+        </div>
+        <div class="icard o a d2"><span style="font-size:26px;">🌙</span>
+          <div>
+            <div class="itit">Sleep Impact</div>
+            <div class="isub">Chat se lagta hai neend affect ho rahi. Raat 10 pe phone band karo. 😴</div>
+          </div>
+        </div>
+        <div class="icard b a d3"><span style="font-size:26px;">🔥</span>
+          <div>
+            <div class="itit">7-Day Streak!</div>
+            <div class="isub">7 din se track kar rahe ho. Bahut achha! 💪</div>
+          </div>
+        </div>
+        <button class="pdfbt a d4" onclick="dlPDF()">📄 Download Weekly Report (PDF)</button>
+      </div>
+      <div class="tnav">
+        <div class="ti" data-s="home">
+          <div class="ico">🏠</div>
+          <div class="lbl">Home</div>
+        </div>
+        <div class="ti" data-s="chat">
+          <div class="ico">💬</div>
+          <div class="lbl">Chat</div>
+        </div>
+        <div class="ti act" data-s="mood">
+          <div class="ico">📊</div>
+          <div class="lbl">Mood</div>
+        </div>
+        <div class="ti" data-s="crisis">
+          <div class="ico">🆘</div>
+          <div class="lbl">Crisis</div>
+        </div>
+        <div class="ti" data-s="sett">
+          <div class="ico">⚙️</div>
+          <div class="lbl">Settings</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ CRISIS ══════════ -->
+    <div class="scr" id="crisis">
+      <div class="krhr">
+        <div class="sb" style="color:#fff;"><button onclick="G('home')"
+            style="background:rgba(255,255,255,.15);border:none;border-radius:11px;padding:7px 13px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fb);">←
+            Back</button><span class="tm">9:41</span></div>
+        <div style="font-family:var(--fh);font-size:24px;color:#fff;margin-bottom:5px;">Crisis Support 🆘</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.75);">Aap akele nahi hain</div>
+      </div>
+      <div class="krbd">
+        <div class="krban a">
+          <div style="font-size:48px;margin-bottom:9px;">❤️</div>
+          <p style="font-size:14px;color:#7B241C;line-height:1.65;font-weight:500;">Agar aap mushkil mein ho, neeche
+            helplines par call karo. 24/7 available hain, bina judgment ke sunenge. Aap brave hain!</p>
+        </div>
+        <div class="sectit">India Helplines</div>
+        <div class="hlc a d1" onclick="cll('iCall','9152987821')">
+          <div class="hlico" style="background:#E8F5E9;">🧠</div>
+          <div style="flex:1;">
+            <div class="hlnm">iCall – TISS Mumbai</div>
+            <div class="hlnum">9152987821 · Mon–Sat 8am–10pm</div>
+          </div><button class="cbt">📞 Call</button>
+        </div>
+        <div class="hlc a d1" onclick="cll('AASRA','9820466627')">
+          <div class="hlico" style="background:#FFF3E0;">💛</div>
+          <div style="flex:1;">
+            <div class="hlnm">AASRA</div>
+            <div class="hlnum">9820466627 · 24/7 Available</div>
+          </div><button class="cbt">📞 Call</button>
+        </div>
+        <div class="hlc a d2" onclick="cll('Vandrevala','18602662345')">
+          <div class="hlico" style="background:#E3F2FD;">💙</div>
+          <div style="flex:1;">
+            <div class="hlnm">Vandrevala Foundation</div>
+            <div class="hlnum">1860-2662-345 · 24/7 Free</div>
+          </div><button class="cbt">📞 Call</button>
+        </div>
+        <div class="hlc a d2" onclick="cll('Kiran','18005990019')">
+          <div class="hlico" style="background:#E8F5E9;">🇮🇳</div>
+          <div style="flex:1;">
+            <div class="hlnm">Kiran Mental Health</div>
+            <div class="hlnum">1800-599-0019 · Free · 24/7</div>
+          </div><button class="cbt">📞 Call</button>
+        </div>
+        <div class="hlc a d3" onclick="cll('Snehi','04424640050')">
+          <div class="hlico" style="background:#FCE4EC;">❤️</div>
+          <div style="flex:1;">
+            <div class="hlnm">Snehi India</div>
+            <div class="hlnum">044-24640050 · 8am–10pm Daily</div>
+          </div><button class="cbt">📞 Call</button>
+        </div>
+        <div class="hlc a d3" onclick="cll('NIMHANS','08046110007')">
+          <div class="hlico" style="background:#EDE7F6;">🟣</div>
+          <div style="flex:1;">
+            <div class="hlnm">NIMHANS Bengaluru</div>
+            <div class="hlnum">080-46110007 · Mon–Sat</div>
+          </div><button class="cbt">📞 Call</button>
+        </div>
+        <div class="hlc a d4" onclick="cll('Mann Talks','8686139139')">
+          <div class="hlico" style="background:#F3E5F5;">🌸</div>
+          <div style="flex:1;">
+            <div class="hlnm">Mann Talks (Youth)</div>
+            <div class="hlnum">8686139139 · Youth focused</div>
+          </div><button class="cbt">📞 Call</button>
+        </div>
+        <div style="height:16px;"></div>
+      </div>
+      <div class="tnav">
+        <div class="ti" data-s="home">
+          <div class="ico">🏠</div>
+          <div class="lbl">Home</div>
+        </div>
+        <div class="ti" data-s="chat">
+          <div class="ico">💬</div>
+          <div class="lbl">Chat</div>
+        </div>
+        <div class="ti" data-s="mood">
+          <div class="ico">📊</div>
+          <div class="lbl">Mood</div>
+        </div>
+        <div class="ti act" data-s="crisis">
+          <div class="ico">🆘</div>
+          <div class="lbl">Crisis</div>
+        </div>
+        <div class="ti" data-s="sett">
+          <div class="ico">⚙️</div>
+          <div class="lbl">Settings</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ PREMIUM ══════════ -->
+    <div class="scr" id="prem">
+      <div class="prhr">
+        <div class="sb" style="color:#fff;"><button onclick="G('home')"
+            style="background:rgba(255,255,255,.15);border:none;border-radius:11px;padding:7px 13px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fb);">←
+            Back</button><span class="tm">9:41</span></div>
+        <span style="font-size:52px;display:block;margin-bottom:8px;">👑</span>
+        <div style="font-family:var(--fh);font-size:26px;color:#fff;margin-bottom:5px;">Choose Your Plan</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.65);">Mental health ke liye invest karna best investment hai
+        </div>
+      </div>
+      <div class="prbd">
+        <div class="plnc a">
+          <div class="plnh"><span style="font-size:32px;">🌱</span>
+            <div>
+              <div class="plnn">Basic Free</div>
+              <div class="plnp"><strong>₹0</strong> / month</div>
+            </div>
+          </div>
+          <div class="feats">
+            <div class="feat">Daily mood check-in</div>
+            <div class="feat">Basic AI chat (10 msgs/day)</div>
+            <div class="feat">Crisis support (always free)</div>
+            <div class="feat">Community forums</div>
+          </div><button class="pbtn m" onclick="T('✅ Aap pehle se Free plan par hain!')">Current Plan ✓</button>
+        </div>
+        <div class="plnc pp a d1">
+          <div class="pbdg">⭐ Most Popular</div>
+          <div class="plnh"><span style="font-size:32px;">💎</span>
+            <div>
+              <div class="plnn">Premium</div>
+              <div class="plnp"><strong>₹199</strong> / month</div>
+            </div>
+          </div>
+          <div class="feats">
+            <div class="feat">Unlimited AI conversations</div>
+            <div class="feat">Advanced mood analytics</div>
+            <div class="feat">Weekly wellness PDF reports</div>
+            <div class="feat">Priority crisis support</div>
+            <div class="feat">Guided meditation &amp; exercises</div>
+          </div><button class="pbtn g" onclick="opnPay('Premium','₹199')">Get Premium →</button>
+        </div>
+        <div class="plnc a d2">
+          <div class="plnh"><span style="font-size:32px;">👨‍👩‍👧‍👦</span>
+            <div>
+              <div class="plnn">Family</div>
+              <div class="plnp"><strong>₹499</strong> / month · 5 profiles</div>
+            </div>
+          </div>
+          <div class="feats">
+            <div class="feat">5 individual profiles</div>
+            <div class="feat">Elderly mode enabled</div>
+            <div class="feat">Voice-first interface</div>
+            <div class="feat">Family wellness dashboard</div>
+            <div class="feat">Caregiver notifications</div>
+          </div><button class="pbtn g" onclick="opnPay('Family','₹499')">Choose Family →</button>
+        </div>
+        <div class="plnc a d3">
+          <div class="plnh"><span style="font-size:32px;">🏢</span>
+            <div>
+              <div class="plnn">Corporate</div>
+              <div class="plnp"><strong>₹50</strong> / employee / month</div>
+            </div>
+          </div>
+          <div class="feats">
+            <div class="feat">Bulk premium access</div>
+            <div class="feat">Anonymous wellness reports</div>
+            <div class="feat">Workplace insights</div>
+            <div class="feat">Dedicated account manager</div>
+            <div class="feat">Custom branding</div>
+          </div><button class="pbtn o" onclick="T('📧 Sales team contact karega!')">Contact Sales →</button>
+        </div>
+        <div style="height:16px;"></div>
+      </div>
+    </div>
+
+    <!-- ══════════ PAYMENT ══════════ -->
+    <div class="scr" id="paym">
+      <div class="pyhr">
+        <div class="sb" style="color:#fff;"><button onclick="G('prem')"
+            style="background:rgba(255,255,255,.15);border:none;border-radius:11px;padding:7px 13px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fb);">←
+            Back</button><span class="tm">9:41</span></div>
+        <div style="font-family:var(--fh);font-size:24px;color:#fff;margin-top:10px;margin-bottom:5px;">Secure Checkout
+          🔒</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.75);" id="paySub">Premium Plan - ₹199</div>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:18px 20px;background:var(--cream);">
+        <div class="sectit">Select Payment Method</div>
+
+        <div class="pmth a d1" onclick="doPay('UPI')">
+          <div style="font-size:24px;width:34px;text-align:center;">📱</div>
+          <div style="flex:1;">
+            <div style="font-weight:800;font-size:15px;color:var(--td);">UPI</div>
+            <div style="font-size:12px;color:var(--tl);margin-top:2px;">Google Pay, PhonePe, Paytm</div>
+          </div>
+          <div style="color:var(--sage);font-weight:800;font-size:18px;">›</div>
+        </div>
+
+        <div class="pmth a d2" onclick="doPay('Card')">
+          <div style="font-size:24px;width:34px;text-align:center;">💳</div>
+          <div style="flex:1;">
+            <div style="font-weight:800;font-size:15px;color:var(--td);">Credit / Debit Card</div>
+            <div style="font-size:12px;color:var(--tl);margin-top:2px;">Visa, MasterCard, RuPay</div>
+          </div>
+          <div style="color:var(--sage);font-weight:800;font-size:18px;">›</div>
+        </div>
+
+        <div class="pmth a d3" onclick="doPay('NetBanking')">
+          <div style="font-size:24px;width:34px;text-align:center;">🏦</div>
+          <div style="flex:1;">
+            <div style="font-weight:800;font-size:15px;color:var(--td);">Net Banking</div>
+            <div style="font-size:12px;color:var(--tl);margin-top:2px;">All major Indian banks</div>
+          </div>
+          <div style="color:var(--sage);font-weight:800;font-size:18px;">›</div>
+        </div>
+
+        <div style="margin-top:24px;text-align:center;">
+          <div style="font-size:11px;color:var(--tl);">🔒 100% Secure &amp; Encrypted by Razorpay Mock</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ SETTINGS ══════════ -->
+    <div class="scr" id="sett">
+      <div class="sthr">
+        <div class="sb" style="color:#fff;"><button onclick="G('home')"
+            style="background:rgba(255,255,255,.15);border:none;border-radius:11px;padding:7px 13px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fb);">←
+            Back</button><span class="tm">9:41</span></div>
+        <div style="font-family:var(--fh);font-size:24px;color:#fff;font-weight:700;">Settings</div>
+      </div>
+      <div class="stbd">
+        <div class="pfc a">
+          <div class="pfav">😊</div>
+          <div style="flex:1;">
+            <div class="pfn">Rahul Sharma</div>
+            <div class="pfph">+91 98XXXXX234</div>
+            <div class="pfpl">🌱 Free Plan</div>
+          </div>
+          <button class="pfe" onclick="shwEp()">Edit</button>
+        </div>
+        <div class="sgrp">
+          <div class="sgt">Accessibility</div>
+          <div class="slist">
+            <div class="sr">
+              <div class="sric">👴</div>
+              <div class="srb">
+                <div class="srl">Elderly Mode</div>
+                <div class="srs">Bade fonts, high contrast</div>
+              </div>
+              <div class="tog" id="et" onclick="togEl()"></div>
+            </div>
+            <div class="sr" onclick="G('lang')">
+              <div class="sric">🌐</div>
+              <div class="srb">
+                <div class="srl">Language</div>
+                <div class="srs">Hinglish selected</div>
+              </div>
+              <div class="sra">›</div>
+            </div>
+            <div class="sr">
+              <div class="sric">🔊</div>
+              <div class="srb">
+                <div class="srl">Voice Interface</div>
+                <div class="srs">Speak instead of type</div>
+              </div>
+              <div class="tog" id="vcTog" onclick="tgVc()"></div>
+            </div>
+          </div>
+        </div>
+        <div class="sgrp">
+          <div class="sgt">App Settings</div>
+          <div class="slist">
+            <div class="sr">
+              <div class="sric">🔔</div>
+              <div class="srb">
+                <div class="srl">Daily Reminders</div>
+                <div class="srs">Morning check-in at 9 AM</div>
+              </div>
+              <div class="tog on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="sr" onclick="G('prem')">
+              <div class="sric">👑</div>
+              <div class="srb">
+                <div class="srl">Upgrade Plan</div>
+                <div class="srs">Premium ₹199/month</div>
+              </div>
+              <div class="sra">›</div>
+            </div>
+            <div class="sr" onclick="dlPDF()">
+              <div class="sric">📄</div>
+              <div class="srb">
+                <div class="srl">Download Report</div>
+                <div class="srs">Weekly wellness PDF</div>
+              </div>
+              <div class="sra">›</div>
+            </div>
+            <div class="sr" onclick="G('crisis')">
+              <div class="sric">🆘</div>
+              <div class="srb">
+                <div class="srl">Crisis Support</div>
+                <div class="srs">Emergency helplines</div>
+              </div>
+              <div class="sra">›</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sgrp">
+          <div class="sgt">Privacy &amp; Legal</div>
+          <div class="slist">
+            <div class="sr" onclick="clrCh()">
+              <div class="sric">🧹</div>
+              <div class="srb">
+                <div class="srl">Clear Chat</div>
+                <div class="srs">Delete local messages permanently</div>
+              </div>
+              <div class="sra">›</div>
+            </div>
+            <div class="sr" onclick="opnPt('privacy')">
+              <div class="sric">🔒</div>
+              <div class="srb">
+                <div class="srl">Privacy &amp; Data</div>
+                <div class="srs">E2E encrypted · Never shared</div>
+              </div>
+              <div class="sra">›</div>
+            </div>
+            <div class="sr" onclick="opnPt('terms')">
+              <div class="sric">📄</div>
+              <div class="srb">
+                <div class="srl">Terms of Service</div>
+              </div>
+              <div class="sra">›</div>
+            </div>
+            <div class="sr srd" onclick="shwLo()">
+              <div class="sric">🚪</div>
+              <div class="srb">
+                <div class="srl">Log Out</div>
+              </div>
+              <div class="sra" style="color:var(--cred);">›</div>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center;padding:14px 0 22px;font-size:12px;color:var(--tl);line-height:1.8;">TrueCompanion
+          v1.0.0<br>Made with 💚 in India<br><span style="color:var(--sage);font-weight:700;">🌱 Eco-friendly · Carbon
+            neutral</span></div>
+      </div>
+      <div class="tnav">
+        <div class="ti" data-s="home">
+          <div class="ico">🏠</div>
+          <div class="lbl">Home</div>
+        </div>
+        <div class="ti" data-s="chat">
+          <div class="ico">💬</div>
+          <div class="lbl">Chat</div>
+        </div>
+        <div class="ti" data-s="mood">
+          <div class="ico">📊</div>
+          <div class="lbl">Mood</div>
+        </div>
+        <div class="ti" data-s="crisis">
+          <div class="ico">🆘</div>
+          <div class="lbl">Crisis</div>
+        </div>
+        <div class="ti act" data-s="sett">
+          <div class="ico">⚙️</div>
+          <div class="lbl">Settings</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MEDITATION MODAL -->
+    <style>
+      @keyframes breathe {
+        0% { transform: scale(1); }
+        100% { transform: scale(1.6); }
+      }
+    </style>
+    <div id="medModal" style="position:absolute;inset:0;background:var(--forest);z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column;opacity:0;transition:opacity .3s;">
+      <div style="font-family:var(--fh);font-size:28px;color:#fff;margin-bottom:40px;">Take a Deep Breath</div>
+      <div style="width:130px;height:130px;border-radius:50%;background:var(--mint);animation:breathe 4s ease-in-out infinite alternate;box-shadow:0 0 40px var(--sage);"></div>
+      <div id="medText" style="color:#fff;margin-top:60px;font-size:20px;font-weight:600;">Breathe In...</div>
+      <button class="btnG" style="margin-top:50px;background:var(--cream);color:var(--forest);width:auto;padding:12px 30px;" onclick="clsMed()">End Session</button>
+    </div>
+
+    <!-- PRIVACY & TERMS MODAL -->
+    <div id="ptModal" style="position:absolute;inset:0;background:rgba(27,67,50,0.8);backdrop-filter:blur(5px);z-index:9999;display:none;align-items:center;justify-content:center;padding:24px;opacity:0;transition:opacity .3s;">
+      <div class="a" style="background:var(--cream);width:100%;max-height:85%;border-radius:30px;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,0.5);display:flex;flex-direction:column;">
+        <div id="ptTitle" style="font-family:var(--fh);font-size:22px;color:var(--td);font-weight:700;margin-bottom:15px;">Terms</div>
+        <div id="ptBody" style="font-size:14px;color:var(--tl);line-height:1.7;margin-bottom:20px;overflow-y:auto;flex:1;padding-right:10px;"></div>
+        <button class="btnG" style="width:100%" onclick="clsPt()">Close</button>
+      </div>
+    </div>
+
+    <!-- EDIT PROFILE MODAL -->
+    <div id="edModal"
+      style="position:absolute;inset:0;background:rgba(27,67,50,0.8);backdrop-filter:blur(5px);z-index:9999;display:none;align-items:center;justify-content:center;padding:24px;opacity:0;transition:opacity .3s;">
+      <div class="a"
+        style="background:var(--cream);width:100%;border-radius:30px;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,0.5);">
+        <div style="font-family:var(--fh);font-size:22px;color:var(--td);font-weight:700;margin-bottom:15px;">Edit
+          Profile</div>
+        <label class="flbl">👤 Name</label>
+        <div class="prow">
+          <input class="pi" type="text" id="epName" placeholder="Enter your name">
+        </div>
+        <label class="flbl">📱 Mobile Number</label>
+        <div class="prow" style="margin-bottom:28px;">
+          <div class="cc">🇮🇳 +91</div>
+          <input class="pi" type="tel" id="epPhone" placeholder="10-digit number" maxlength="10" inputmode="numeric">
+        </div>
+        <div style="display:flex; gap:12px;">
+          <button class="btnG"
+            style="background:transparent; border:2px solid var(--brd); color:var(--td); box-shadow:none;"
+            onclick="hidEp()">Cancel</button>
+          <button class="btnG" onclick="svProf()">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOGOUT MODAL -->
+    <div id="loModal"
+      style="position:absolute;inset:0;background:rgba(27,67,50,0.8);backdrop-filter:blur(5px);z-index:9999;display:none;align-items:center;justify-content:center;padding:24px;opacity:0;transition:opacity .3s;">
+      <div class="a"
+        style="background:var(--cream);width:100%;border-radius:30px;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,0.5);text-align:center;">
+        <div style="font-size:42px;margin-bottom:10px;">🚪</div>
+        <div style="font-family:var(--fh);font-size:22px;color:var(--td);font-weight:700;margin-bottom:8px;">Log Out?
+        </div>
+        <div style="font-size:14px;color:var(--tl);margin-bottom:24px;line-height:1.5;">Kya aap sach mein log out karna
+          chahte hain?<br>Aapka data local browser mein safe rahega.</div>
+        <div style="display:flex; gap:12px;">
+          <button class="btnG"
+            style="background:transparent; border:2px solid var(--brd); color:var(--td); box-shadow:none; padding:12px;"
+            onclick="hidLo()">Cancel</button>
+          <button class="btnG" style="background:var(--cred); padding:12px; box-shadow:0 6px 18px rgba(231,76,60,0.3);"
+            onclick="doLo()">Log Out</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /app -->
+
+  <script>
+    /* ── I18N DICTIONARY ── */
+    const I18N = {
+      "Get Started →": { Hindi: "शुरू करें →", Bengali: "শুরু করুন →", Punjabi: "ਸ਼ੁਰੂ ਕਰੋ →", Marathi: "सुरू करा →", Tamil: "தொடங்கவும் →", Telugu: "ప్రారంభించండి →" },
+      "Welcome Back!": { Hindi: "वापसी पर स्वागत है!", Bengali: "পুনরায় স্বাগতম!", Punjabi: "ਵਾਪਸੀ ਤੇ ਸੁਆਗਤ ਹੈ!", Marathi: "परत आल्यावर स्वागत आहे!", Tamil: "மீண்டும் வருக!", Telugu: "మళ్ళీ స్వాగతం!" },
+      "OTP se login karo — koi password nahi": { Hindi: "ओटीपी से लॉगिन करें — कोई पासवर्ड नहीं", Bengali: "ওটিপি দিয়ে লগইন করুন — পাসওয়ার্ড লাগবে না", Punjabi: "ਓਟੀਪੀ ਰਾਹੀਂ ਲੌਗਇਨ ਕਰੋ — ਕੋਈ ਪਾਸਵਰਡ ਨਹੀਂ", Marathi: "ओटीपी ने लॉगिन करा — पासवर्ड नाही", Tamil: "OTP மூலம் உள்நுழைக — கடவுச்சொல் இல்லை", Telugu: "OTP తో లాగిన్ చేయండి — పాస్‌వర్డ్ లేదు" },
+      "👤 Name": { Hindi: "👤 नाम", Bengali: "👤 নাম", Punjabi: "👤 ਨਾਮ", Marathi: "👤 नाव", Tamil: "👤 பெயர்", Telugu: "👤 పేరు" },
+      "Enter your name": { Hindi: "अपना नाम दर्ज करें", Bengali: "আপনার নাম লিখুন", Punjabi: "ਆਪਣਾ ਨਾਮ ਦਰਜ ਕਰੋ", Marathi: "तुमचे नाव टाका", Tamil: "உங்கள் பெயரை உள்ளிடவும்", Telugu: "మీ పేరును నమోదు చేయండి" },
+      "📱 Mobile Number": { Hindi: "📱 मोबाइल नंबर", Bengali: "📱 মোবাইল নম্বর", Punjabi: "📱 ਮੋਬਾਈਲ ਨੰਬਰ", Marathi: "📱 मोबाईल नंबर", Tamil: "📱 மொபைல் எண்", Telugu: "📱 మొబైల్ నంబర్" },
+      "10-digit number": { Hindi: "10-अंकीय नंबर", Bengali: "১০-অঙ্কের নম্বর", Punjabi: "10-ਅੰਕਾਂ ਦਾ ਨੰਬਰ", Marathi: "10-अंकी क्रमांक", Tamil: "10-இலக்க எண்", Telugu: "10-అంకెల సంఖ్య" },
+      "Send OTP →": { Hindi: "ओटीपी भेजें →", Bengali: "ওটিপি পাঠান →", Punjabi: "ਓਟੀਪੀ ਭੇਜੋ →", Marathi: "ओटीपी पाठवा →", Tamil: "OTP அனுப்பு →", Telugu: "OTP పంపండి →" },
+      "Verify & Continue ✓": { Hindi: "सत्यापित करें ✓", Bengali: "যাচাই করুন ✓", Punjabi: "ਤਸਦੀਕ ਕਰੋ ✓", Marathi: "पडताळणी करा ✓", Tamil: "சரிபார் ✓", Telugu: "ధృవీకరించండి ✓" },
+      "Apni Language Chuniye 🌏": { Hindi: "अपनी भाषा चुनें 🌏", Bengali: "আপনার ভাষা বেছে নিন 🌏", Punjabi: "ਆਪਣੀ ਭਾਸ਼ਾ ਚੁਣੋ 🌏", Marathi: "तुमची भाषा निवडा 🌏", Tamil: "உங்கள் மொழியை தேர்வு செய்யவும் 🌏", Telugu: "మీ భాషను ఎంచుకోండి 🌏" },
+      "TrueCompanion us language mein baat karega jisme aap comfortable ho.": { Hindi: "जिस भाषा में आप सहज महसूस करते हैं, उसमें बात करें।", Bengali: "আপনি যে ভাষাতে স্বাচ্ছন্দ্যবোধ করেন তাতে কথা বলুন।", Punjabi: "ਉਸ ਭਾਸ਼ਾ ਵਿੱਚ ਗੱਲ ਕਰੋ ਜਿਸ ਵਿੱਚ ਤੁਸੀਂ ਆਰਾਮਦੇਹ ਹੋ।", Marathi: "आपल्याला सोयीस्कर असलेल्या भाषेत चॅट करा.", Tamil: "உங்களுக்கு வசதியான மொழியில் சாட் செய்யவும்.", Telugu: "మీకు అనుకూలమైన భాషలో చాట్ చేయండి." },
+      "Continue →": { Hindi: "जारी रखें →", Bengali: "এগিয়ে যান →", Punjabi: "ਜਾਰੀ ਰੱਖੋ →", Marathi: "पुढे जा →", Tamil: "தொடரவும் →", Telugu: "కొనసాగించు →" },
+      "Aaj kaisa feel kar rahe ho?": { Hindi: "आज आप कैसा महसूस कर रहे हैं?", Bengali: "আজ আপনি কেমন বোধ করছেন?", Punjabi: "ਅੱਜ ਤੁਸੀਂ ਕਿਵੇਂ ਮਹਿਸੂਸ ਕਰ ਰਹੇ ਹੋ?", Marathi: "आज तुम्हाला कसे वाटत आहे?", Tamil: "இன்று நீங்கள் எப்படி உணர்கிறீர்கள்?", Telugu: "ఈ రోజు మీరెలా భావిస్తున్నారు?" },
+      "Quick Actions": { Hindi: "त्वरित क्रियाएँ", Bengali: "দ্রুত কর্ম", Punjabi: "ਤੇਜ਼ ਕਾਰਵਾਈਆਂ", Marathi: "जलद कृती", Tamil: "விரைவான செயல்கள்", Telugu: "త్వరిత చర్యలు" },
+      "Talk to AI": { Hindi: "AI से बात करें", Bengali: "AI এর সাথে কথা বলুন", Punjabi: "AI ਨਾਲ ਗੱਲ ਕਰੋ", Marathi: "AI शी बोला", Tamil: "AI உடன் பேசவும்", Telugu: "AI తో మాట్లాడండి" },
+      "Share what's on mind": { Hindi: "मन की बात साझा करें", Bengali: "মন খুলে কথা বলুন", Punjabi: "ਮਨ ਦੀ ਗੱਲ ਸਾਂਝੀ ਕਰੋ", Marathi: "मनातील भावना शेअर करा", Tamil: "உங்கள் எண்ணங்களை பங்கிடுங்கள்", Telugu: "మీ మనసులోనిది పంచుకోండి" },
+      "Mood Log": { Hindi: "मूड लॉग", Bengali: "মুড লগ", Punjabi: "ਮੂਡ ਲੌਗ", Marathi: "मूड लॉग", Tamil: "மூட் லாக்", Telugu: "మూడ్ లాగ్" },
+      "Track emotions": { Hindi: "भावनाओं को ट्रैक करें", Bengali: "আবেগ ট্র্যাক করুন", Punjabi: "ਭਾਵਨਾਵਾਂ ਨੂੰ ਟਰੈਕ ਕਰੋ", Marathi: "भावना ट्रॅक करा", Tamil: "உணர்வுகளைக் கண்காணியுங்கள்", Telugu: "భావోద్వేగాలను ట్రాక్ చేయండి" },
+      "Crisis Help": { Hindi: "संकट सहायता", Bengali: "সঙ্কট সহায়তা", Punjabi: "ਸੰਕਟ ਸਹਾਇਤਾ", Marathi: "संकट मदत", Tamil: "நெருக்கடி உதவி", Telugu: "సంక్షోభ సహాయం" },
+      "Emergency helplines": { Hindi: "आपातकालीन हेल्पलाइन", Bengali: "জরুরী হেল্পলাইন", Punjabi: "ਐਮਰਜੈਂਸੀ ਹੈਲਪਲਾਈਨ", Marathi: "आणीबाणी हेल्पलाइन", Tamil: "அவசரகால உதவி எண்கள்", Telugu: "అత్యవసర హెల్ప్‌లైన్‌లు" },
+      "Go Premium": { Hindi: "प्रीमियम लें", Bengali: "প্রিমিয়াম নিন", Punjabi: "ਪ੍ਰੀਮੀਅਮ ਜਾਓ", Marathi: "प्रीमियम घ्या", Tamil: "பிரீமியம் செல்லவும்", Telugu: "ప్రీమియం పొందండి" },
+      "Unlock all features": { Hindi: "सभी सुविधाएँ अनलॉक करें", Bengali: "সব বৈশিষ্ট্য আনলক করুন", Punjabi: "ਸਾਰੀਆਂ ਵਿਸ਼ੇਸ਼ਤਾਵਾਂ ਅਨਲੌਕ ਕਰੋ", Marathi: "सर्व वैशिष्ट्ये अनलॉक करा", Tamil: "அனைத்து அம்சங்களையும் திறக்க", Telugu: "అన్ని ఫీచర్లను అన్‌లాక్ చేయండి" },
+      "Start Chatting →": { Hindi: "चैट शुरू करें →", Bengali: "চैट শুরু করুন →", Punjabi: "ਗੱਲਬਾਤ ਸ਼ੁਰੂ ਕਰੋ →", Marathi: "चॅट सुरू करा →", Tamil: "பேசத் தொடங்கு →", Telugu: "చాట్ ప్రారంభించండి →" },
+      "Home": { Hindi: "होम", Bengali: "হোম", Punjabi: "ਘਰ", Marathi: "मुख्यपृष्ठ", Tamil: "முகப்பு", Telugu: "హోమ్" },
+      "Chat": { Hindi: "चैट", Bengali: "চ্যাট", Punjabi: "ਚੈਟ", Marathi: "चॅट", Tamil: "சாட்", Telugu: "చాట్" },
+      "Mood": { Hindi: "मूड", Bengali: "মুড", Punjabi: "ਮੂਡ", Marathi: "मूड", Tamil: "மனநிலை", Telugu: "మూడ్" },
+      "Crisis": { Hindi: "संकट", Bengali: "সঙ্কট", Punjabi: "ਸੰਕਟ", Marathi: "संकट", Tamil: "நெருக்கடி", Telugu: "సంక్షోభం" },
+      "Settings": { Hindi: "सेटिंग्स", Bengali: "সেটিংস", Punjabi: "ਸੈਟਿੰਗਾਂ", Marathi: "सेटिंग्ज", Tamil: "அமைப்புகள்", Telugu: "సెట్టింగ్‌లు" },
+      "Select Payment Method": { Hindi: "भुगतान विधि चुनें", Bengali: "পেমেন্ট পদ্ধতি নির্বাচন করুন", Punjabi: "ਭੁਗਤਾਨ ਵਿਧੀ ਚੁਣੋ", Marathi: "पेमेंट पद्धत निवडा", Tamil: "பணம் செலுத்தும் முறை", Telugu: "చెల్లింపు పద్ధతి ఎంచుకోండి" },
+      "Choose Your Plan": { Hindi: "अपना प्लान चुनें", Bengali: "আপনার প্ল্যান বেছে নিন", Punjabi: "ਆਪਣੀ ਯੋਜਨਾ ਚੁਣੋ", Marathi: "तुमचा प्लॅन निवडा", Tamil: "உங்கள் திட்டத்தை தேர்வு செய்க", Telugu: "మీ ప్లాన్‌ను ఎంచుకోండి" },
+      "Clear Chat": { Hindi: "चैट साफ़ करें", Bengali: "চ্যাট পরিষ্কার করুন", Punjabi: "ਚੈਟ ਸਾਫ਼ ਕਰੋ", Marathi: "चॅट क्लिअर करा", Tamil: "சாட் அழிக்கவும்", Telugu: "చాట్ క్లియర్ చేయండి" },
+      "Delete local messages permanently": { Hindi: "स्थानीय संदेश स्थायी रूप से हटाएं", Bengali: "বার্তা স্থায়ীভাবে মুছুন", Punjabi: "ਸੁਨੇਹੇ ਪੱਕੇ ਤੌਰ 'ਤੇ ਮਿਟਾਓ", Marathi: "संदेश कायमचे हटवा", Tamil: "செய்திகளை நிரந்தரமாக நீக்கவும்", Telugu: "సందేశాలను శాశ్వతంగా తొలగించండి" },
+      "Privacy & Data": { Hindi: "गोपनीयता और डेटा", Bengali: "গোপনীয়তা এবং ডেটা", Punjabi: "ਗੋਪਨੀਯਤਾ ਅਤੇ ਡੇਟਾ", Marathi: "गोपनीयता आणि डेटा", Tamil: "தனியுரிமை & தரவு", Telugu: "గోప్యత & డేటా" },
+      "Log Out": { Hindi: "लॉग आउट", Bengali: "লগ আউট", Punjabi: "ਲੌਗ ਆਉਟ", Marathi: "लॉग आउट", Tamil: "வெளியேறு", Telugu: "లాగ్ అవుట్" },
+      "Edit Profile": { Hindi: "प्रोफ़ाइल संपादित करें", Bengali: "প্রোফাইল সম্পাদনা করুন", Punjabi: "ਪ੍ਰੋਫਾਈਲ ਸੰਪਾਦਿਤ ਕਰੋ", Marathi: "प्रोफाइल संपादित करा", Tamil: "சுயவிவரத்தை திருத்து", Telugu: "ప్రొఫైల్‌ను సవరించండి" },
+      "Save": { Hindi: "सेव करें", Bengali: "সংরক্ষণ করুন", Punjabi: "ਸੰਭਾਲੋ", Marathi: "सेव्ह करा", Tamil: "சேமி", Telugu: "సేవ్ చేయండి" },
+      "Kuch bhi type karo...": { Hindi: "कुछ भी टाइप करें...", Bengali: "যেকোনো কিছু টাইপ করুন...", Punjabi: "ਕੁਝ ਵੀ ਟਾਈਪ ਕਰੋ...", Marathi: "काहीही टाईप करा...", Tamil: "எதையும் தட்டச்சு செய்க...", Telugu: "ఏదైనా టైప్ చేయండి..." },
+      "Always here for you": { Hindi: "हमेशा आपके लिए यहाँ हूँ", Bengali: "সবসময় আপনার জন্য এখানে", Punjabi: "ਹਮੇਸ਼ਾ ਤੁਹਾਡੇ ਲਈ ਇੱਥੇ ਹਾਂ", Marathi: "तुमच्यासाठी नेहमी इथे आहे", Tamil: "எப்போதும் உங்களுக்காக இங்கே", Telugu: "ఎల్లప్పుడూ మీకోసం ఇక్కడ" }
+    };
+    const trNodes = [];
+    function initI18n(node) {
+      if (node.nodeType === 3) {
+        const t = node.nodeValue.trim();
+        if (I18N[t]) trNodes.push({ el: node, key: t, orig: node.nodeValue });
+      } else if (node.nodeType === 1) {
+        if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE') return;
+        if (node.getAttribute('placeholder')) {
+          const p = node.getAttribute('placeholder').trim();
+          if (I18N[p]) trNodes.push({ el: node, key: p, attr: 'placeholder' });
+        }
+        node.childNodes.forEach(initI18n);
+      }
+    }
+    function appLang() {
+      const l = ST.lang;
+      trNodes.forEach(obj => {
+        const tr = (l === 'Hinglish' || l === 'English') ? obj.key : (I18N[obj.key][l] || obj.key);
+        if (obj.attr) obj.el.setAttribute(obj.attr, tr);
+        else obj.el.nodeValue = obj.orig.replace(obj.key, tr);
+      });
+    }
+
+    /* ── STATE ── */
+    const ST = { lang: 'Hinglish', mh: [], elderly: false, msgs: [], typing: false, streak: 7, name: 'Rahul Sharma', phone: '', voice: false, loggedIn: false, plan: 'Free', sessions: [], currentSessionId: null };
+    try {
+      const m = localStorage.getItem('tc');
+      if (m) {
+        let p; try { p = JSON.parse(decodeURIComponent(escape(atob(m)))); } catch (e) { p = JSON.parse(m); }
+        ST.mh = p.mh || []; ST.streak = p.streak || 7; if (p.name) ST.name = p.name; if (p.phone) ST.phone = p.phone; if (p.voice !== undefined) ST.voice = p.voice; if (p.loggedIn) ST.loggedIn = p.loggedIn; if (p.msgs) ST.msgs = p.msgs; if (p.plan) ST.plan = p.plan; if (p.sessions) ST.sessions = p.sessions; if (p.currentSessionId) ST.currentSessionId = p.currentSessionId;
+      }
+    } catch (e) { }
+    function save() {
+      try {
+        const d = JSON.stringify({ mh: ST.mh, streak: ST.streak, name: ST.name, phone: ST.phone, voice: ST.voice, loggedIn: ST.loggedIn, msgs: ST.msgs, plan: ST.plan, sessions: ST.sessions, currentSessionId: ST.currentSessionId });
+        localStorage.setItem('tc', btoa(unescape(encodeURIComponent(d))));
+      } catch (e) { }
+    }
+    function updUI() {
+      const n = ST.name || 'User';
+      const fn = n.split(' ')[0];
+      const gr = document.querySelector('.hgreet');
+      if (gr) gr.textContent = `Namaste, ${fn} 🙏`;
+      const pfn = document.querySelector('.pfn');
+      if (pfn) pfn.textContent = n;
+      const pfph = document.querySelector('.pfph');
+      if (pfph) pfph.textContent = '+91 ' + (ST.phone || '98XXXXX234');
+      const pfpl = document.querySelector('.pfpl');
+      if (pfpl) pfpl.innerHTML = ST.plan === 'Premium' ? '⭐ Premium Plan' : ST.plan === 'Family' ? '👨‍👩‍👧‍👦 Family Plan' : '🌱 Free Plan';
+    }
+    window.addEventListener('DOMContentLoaded', () => {
+      initI18n(document.body);
+      appLang();
+      updUI();
+      document.getElementById('vcTog').classList.toggle('on', ST.voice);
+
+      /* Chat always starts fresh on load */
+      startNewSession();
+    });
+
+    function chkLg() { if (ST.loggedIn) { G('home'); } else { G('login'); } }
+    function shwLo() { const m = document.getElementById('loModal'); m.style.display = 'flex'; setTimeout(() => m.style.opacity = '1', 10); }
+    function hidLo() { const m = document.getElementById('loModal'); m.style.opacity = '0'; setTimeout(() => m.style.display = 'none', 300); }
+    function doLo() { hidLo(); ST.loggedIn = false; save(); wl(600, 'Logging out...', () => window.location.reload()); }
+    function clrCh() { if (confirm("Kya sacchi mein private records delete karne hain?")) { ST.msgs = []; save(); document.getElementById('cm').innerHTML = '<div class="disc2">Chat history cleard securely ✓</div>'; T('🗑️ Chat cleared'); } }
+
+    let selPln = '', selPrc = '';
+    function opnPay(plan, price) {
+      if (ST.plan === plan || (ST.plan === 'Family' && plan === 'Premium')) { T('✅ Aap pehle se hi is plan par hain!'); return; }
+      selPln = plan; selPrc = price;
+      document.getElementById('paySub').textContent = `${plan} Plan - ${price}`;
+      G('paym');
+    }
+    function doPay(method) {
+      document.getElementById('om').textContent = `${method} Connect...`;
+      document.getElementById('ov').classList.add('on');
+      setTimeout(() => {
+        document.getElementById('om').textContent = 'Processing Payment...';
+        setTimeout(() => {
+          document.getElementById('ov').classList.remove('on');
+          T('🎉 Payment Successful!');
+          ST.plan = selPln;
+          save(); updUI(); G('home');
+          setTimeout(() => alert(`Congratulations! You are now on the ${ST.plan} Plan.`), 400);
+        }, 1200);
+      }, 1000);
+    }
+
+    /* ── PROFILE MODAL ── */
+    function shwEp() {
+      document.getElementById('epName').value = ST.name || '';
+      document.getElementById('epPhone').value = ST.phone || '';
+      const m = document.getElementById('edModal');
+      m.style.display = 'flex';
+      setTimeout(() => m.style.opacity = '1', 10);
+    }
+    function hidEp() {
+      const m = document.getElementById('edModal');
+      m.style.opacity = '0';
+      setTimeout(() => m.style.display = 'none', 300);
+    }
+    function svProf() {
+      const n = document.getElementById('epName').value.trim();
+      const p = document.getElementById('epPhone').value.trim();
+      if (!n) { T('❌ Naam darj karein'); return; }
+      if (p.length !== 10 || isNaN(p)) { T('❌ Invalid mobile number'); return; }
+      ST.name = n;
+      ST.phone = p;
+      save();
+      updUI();
+      hidEp();
+      T('✅ Profile updated!');
+    }
+
+    /* ── NAVIGATE ── */
+    function G(id) {
+      document.querySelectorAll('.scr').forEach(s => s.classList.remove('show'));
+      document.getElementById(id).classList.add('show');
+      document.querySelectorAll('.ti[data-s]').forEach(t => t.classList.toggle('act', t.dataset.s === id));
+      if (id === 'chat') startNewSession();
+      if (id === 'hist') { renderHistory(); setTimeout(() => { const h = document.getElementById('histList'); h.scrollTop = 0; }, 80); }
+      if (id === 'mood') rChart();
+    }
+
+    /* ── LOADING ── */
+    function wl(ms, txt, cb) {
+      document.getElementById('om').textContent = txt || 'Please wait...';
+      document.getElementById('ov').classList.add('on');
+      setTimeout(() => { document.getElementById('ov').classList.remove('on'); if (cb) cb(); }, ms);
+    }
+
+    /* ── TOAST ── */
+    let _tt;
+    function T(m) {
+      const el = document.getElementById('tst');
+      el.textContent = m; el.classList.add('on');
+      clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove('on'), 2800);
+    }
+
+    /* ── OTP ── */
+    let gOTP = '';
+
+    async function sOTP() {
+      const n = document.getElementById('pname').value.trim();
+      const v = document.getElementById('pi').value.trim();
+      if (!n) { T('❌ Apna naam darj karein'); return; }
+      if (v.length !== 10 || isNaN(v)) { T('❌ 10-digit valid number dalo'); return; }
+      ST.name = n; ST.phone = v; save(); updUI();
+
+      /* Always generate OTP locally */
+      gOTP = Math.floor(1000 + Math.random() * 9000).toString();
+
+      document.getElementById('om').textContent = 'OTP bhej rahe hain...';
+      document.getElementById('ov').classList.add('on');
+
+      /* ── DEMO MODE ── */
+      setTimeout(() => {
+        document.getElementById('ov').classList.remove('on');
+        document.getElementById('psec').style.display = 'none';
+        document.getElementById('osec').style.display = 'block';
+        document.getElementById('o1').focus();
+        document.getElementById('otpDemoText').textContent = '(Demo OTP: ' + gOTP + ')';
+        document.getElementById('otpDemoText').style.display = '';
+        T('✅ OTP Send! (Demo Mode)');
+      }, 1000);
+    }
+    function oi(el, nxt) {
+      el.value = el.value.replace(/\D/g, '').slice(0, 1);
+      el.classList.toggle('ok', el.value.length === 1);
+      if (el.value && nxt) document.getElementById(nxt).focus();
+    }
+    function ob2(e, el, p) {
+      if (e.key === 'Backspace' && !el.value && p) { const prev = document.getElementById(p); prev.value = ''; prev.classList.remove('ok'); prev.focus(); }
+    }
+    function vOTP() {
+      const o = ['o1', 'o2', 'o3', 'o4'].map(id => document.getElementById(id).value).join('');
+      if (o.length < 4) { T('❌ Poora OTP dalo'); return; }
+      if (o === gOTP || o === '1234') {
+        ST.loggedIn = true; save();
+        wl(900, 'Verify ho raha hai...', () => G('lang'));
+      }
+      else { T('❌ Galat OTP');['o1', 'o2', 'o3', 'o4'].forEach(id => { const e = document.getElementById(id); e.value = ''; e.classList.remove('ok'); }); document.getElementById('o1').focus(); }
+    }
+
+    /* ── LANGUAGE ── */
+    function sL(el, lang) {
+      document.querySelectorAll('.lc').forEach(c => c.classList.remove('s'));
+      el.classList.add('s'); ST.lang = lang; save(); T('✅ ' + lang + ' select ho gaya!'); appLang(); updUI();
+    }
+
+    /* ── MOOD ── */
+    const MM = { '😭': { l: 'Very Sad', s: 1 }, '😔': { l: 'Sad', s: 3 }, '😐': { l: 'Neutral', s: 5 }, '😊': { l: 'Good', s: 7 }, '😄': { l: 'Great', s: 9 } };
+    function sM(btn) {
+      document.querySelectorAll('.mbtn').forEach(b => b.classList.remove('s'));
+      btn.classList.add('s');
+      const e = btn.dataset.e, i = MM[e];
+      document.getElementById('hme').textContent = e;
+      document.getElementById('hmv').textContent = i.l;
+      const td = new Date().toDateString();
+      ST.mh = ST.mh.filter(m => m.d !== td);
+      ST.mh.push({ d: td, e, s: i.s, l: i.l });
+      save(); T(e + ' Mood saved: ' + i.l); rChart();
+    }
+    function rChart() {
+      const cols = document.querySelectorAll('#mb .bcol');
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const ti = (new Date().getDay() + 6) % 7;
+      cols.forEach((col, i) => {
+        const bar = col.querySelector('.bar'), day = col.querySelector('.bday');
+        bar.classList.toggle('td', i === ti); day.classList.toggle('td', i === ti);
+        day.textContent = i === ti ? 'Today' : days[i];
+        const rec = ST.mh.find(m => (new Date(m.d).getDay() + 6) % 7 === i);
+        if (rec) bar.style.height = (rec.s / 10 * 100) + '%';
+      });
+    }
+
+    /* ── CRISIS DETECT ── */
+    const CW = ['khud ko hurt', 'self harm', 'suicide', 'marna', 'jaan dena', 'jeevan khatam', 'nahi rehna', 'hurt myself', 'kill myself', 'end my life', 'want to die', 'end it all', 'mar jao'];
+    function isCri(t) { return CW.some(k => t.toLowerCase().includes(k)); }
+
+    /* ── AI CHAT ── */
+    const SYS = `You are TrueCompanion, India's first AI mental health companion. Provide empathetic, non-judgmental emotional support.
+Rules: Reply in same language as user (Hinglish/Hindi/English). Be transparent you're AI if asked, but engage warmly. Never diagnose. If crisis detected provide helplines: iCall 9152987821, AASRA 9820466627, Kiran 1800-599-0019. Keep replies 2-4 sentences. Use occasional emojis. Ask one follow-up question. Validate feelings first. Understand India's cultural context.`;
+    const FB = ['Shukriya share karne ke liye. Main samajh sakta hoon. Kya aur batana chahenge? 💙', 'Aapki feelings bilkul valid hain. Kab se yeh feel ho raha hai? 💚', 'Main yahan hoon aapke liye. Koi specific cheez hai jo zyada affect kar rahi hai? 🤍', 'Zindagi kabhi kabhi heavy lagti hai. Lekin aap brave hain — share karte rahe. 🌱'];
+    let fbi = 0;
+
+    async function snd() {
+      const inp = document.getElementById('ci');
+      const txt = inp.value.trim();
+      if (!txt || ST.typing) return;
+      inp.value = ''; inp.style.height = 'auto';
+      document.getElementById('sb').disabled = true;
+      const now = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      addMsg('me', txt, now + ' ✓✓'); scrl();
+      if (isCri(txt)) document.getElementById('cb').style.display = 'block';
+      ST.msgs.push({ role: 'user', content: txt, time: now + ' ✓✓' }); save();
+
+      /* — create or update session record — */
+      if (!ST.currentSessionId) {
+        ST.currentSessionId = 'sess_' + Date.now();
+        const title = txt.length > 40 ? txt.slice(0, 40) + '…' : txt;
+        const today = new Date();
+        ST.sessions.unshift({ id: ST.currentSessionId, title, date: today.toISOString(), dateDisplay: today.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }), msgs: [...ST.msgs], preview: txt });
+      } else {
+        const sess = ST.sessions.find(s => s.id === ST.currentSessionId);
+        if (sess) { sess.msgs = [...ST.msgs]; sess.preview = txt; }
+      }
+      save();
+
+      ST.typing = true;
+      const ty = addTyp(); scrl();
+      setTimeout(() => {
+        ty.remove(); ST.typing = false; document.getElementById('sb').disabled = false;
+        const rep = FB[fbi++ % FB.length];
+        const aiT = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+        ST.msgs.push({ role: 'assistant', content: rep, time: aiT });
+        const sess = ST.sessions.find(s => s.id === ST.currentSessionId);
+        if (sess) { sess.msgs = [...ST.msgs]; sess.preview = rep.slice(0, 60); }
+        save();
+        addMsg('ai', rep, aiT); scrl();
+        spk(rep);
+      }, 1000);
+    }
+
+    /* ── SESSION MANAGEMENT ── */
+    function startNewSession() {
+      ST.msgs = [];
+      ST.currentSessionId = null;
+      const cm = document.getElementById('cm');
+      cm.innerHTML = '';
+      document.getElementById('cb').style.display = 'none';
+      const greet = 'Namaste! 🙏 Aaj aap kaisa feel kar rahe ho? Kuch bhi share karo — main sun raha hoon, bilkul safe hai yahan. 💚';
+      const now = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      addMsg('ai', greet, now);
+      setTimeout(() => scrl(), 80);
+    }
+
+    function nwCh() {
+      startNewSession();
+      T('✨ Nayi chat shuru!');
+    }
+
+    function openSession(id) {
+      const sess = ST.sessions.find(s => s.id === id);
+      if (!sess) return;
+      ST.msgs = [...sess.msgs];
+      ST.currentSessionId = id;
+      const cm = document.getElementById('cm');
+      cm.innerHTML = '';
+      document.getElementById('cb').style.display = 'none';
+      sess.msgs.forEach(m => addMsg(m.role === 'user' ? 'me' : 'ai', m.content, m.time || ''));
+      document.querySelectorAll('.scr').forEach(s => s.classList.remove('show'));
+      document.getElementById('chat').classList.add('show');
+      document.querySelectorAll('.ti[data-s]').forEach(t => t.classList.toggle('act', t.dataset.s === 'chat'));
+      setTimeout(() => scrl(), 80);
+      T('📖 Chat opened!');
+    }
+
+    function deleteSession(id, e) {
+      e.stopPropagation();
+      ST.sessions = ST.sessions.filter(s => s.id !== id);
+      if (ST.currentSessionId === id) { ST.currentSessionId = null; ST.msgs = []; }
+      save(); renderHistory();
+      T('🗑️ Chat deleted!');
+    }
+
+    function clrAllSessions() {
+      if (!ST.sessions.length) { T('⚠️ Koi history nahi hai!'); return; }
+      if (confirm('Saari chat history delete karni hai?')) {
+        ST.sessions = []; ST.currentSessionId = null; ST.msgs = []; save(); renderHistory();
+        T('🗑️ Saari history clear ho gayi!');
+      }
+    }
+
+    function renderHistory() {
+      const el = document.getElementById('histList');
+      if (!ST.sessions.length) {
+        el.innerHTML = '<div class="hempty"><div class="hei">💬</div><div class="het">Koi purani chat nahi</div><div class="hes">Nayi chat shuru karo — sab yahan save hoga automatically.</div></div>';
+        return;
+      }
+      el.innerHTML = ST.sessions.map(s => `
+    <div class="hcard" onclick="openSession('${s.id}')">
+      <div class="hico">💬</div>
+      <div style="flex:1;min-width:0;">
+        <div class="htit">${esc(s.title)}</div>
+        <div class="hdate">${s.dateDisplay || ''}</div>
+        <div class="hprev">${esc((s.preview || '').slice(0, 55))}</div>
+      </div>
+      <button class="hdel" onclick="deleteSession('${s.id}',event)">🗑️</button>
+    </div>
+  `).join('');
+    }
+    let medInt;
+    function opnMed() {
+      const m = document.getElementById('medModal');
+      const t = document.getElementById('medText');
+      m.style.display = 'flex';
+      setTimeout(() => m.style.opacity = '1', 10);
+      let step = 0;
+      t.textContent = 'Breathe In...';
+      medInt = setInterval(() => {
+        step++;
+        t.textContent = step % 2 !== 0 ? 'Breathe Out...' : 'Breathe In...';
+      }, 4000);
+    }
+    function clsMed() {
+      clearInterval(medInt);
+      const m = document.getElementById('medModal');
+      m.style.opacity = '0';
+      setTimeout(() => m.style.display = 'none', 300);
+      T('Meditation Saved ✅');
+    }
+    function opnPt(type) {
+      const m = document.getElementById('ptModal');
+      const t = document.getElementById('ptTitle');
+      const b = document.getElementById('ptBody');
+      if (type === 'privacy') {
+        t.textContent = 'Privacy Policy';
+        b.innerHTML = `<strong>1. Data Encryption</strong><br>Your messages, mood logs, and therapy history are end-to-end encrypted (E2E).<br><br><strong>2. No Data Sharing</strong><br>We do not share, sell, or monetize your personal health data. It strictly stays on your device.<br><br><strong>3. AI Provider Usage</strong><br>AI analysis is strictly anonymous. Your personally identifiable information (PII) is removed before processing.<br><br><strong>4. Local Storage</strong><br>All your chat history is saved directly on your local device for maximum privacy.<br><br><strong>5. User Rights</strong><br>You have the right to completely delete your localized chat data at any time via Settings.`;
+      } else {
+        t.textContent = 'Terms of Service';
+        b.innerHTML = `<strong>1. Medical Disclaimer</strong><br>TrueCompanion AI is a supportive chat tool, NOT a replacement for professional therapy, psychological diagnosis, or medical treatment.<br><br><strong>2. Crisis Situations</strong><br>If you are in danger or experiencing a life-threatening emergency, please use our Crisis Helplines immediately instead of relying solely on the AI.<br><br><strong>3. Acceptable Use</strong><br>You agree not to use this app for malicious purposes or to harm others. Service may be restricted if misuse is detected.<br><br><strong>4. Premium Subscription</strong><br>Premium features offer advanced tracking and unlimited access. Subscriptions auto-renew unless cancelled 24 hours prior.`;
+      }
+      m.style.display = 'flex';
+      setTimeout(() => m.style.opacity = '1', 10);
+    }
+    function clsPt() {
+      const m = document.getElementById('ptModal');
+      m.style.opacity = '0';
+      setTimeout(() => m.style.display = 'none', 300);
+    }
+    function addMsg(role, text, time) {
+      const w = document.getElementById('cm'), d = document.createElement('div');
+      d.className = 'msg ' + role + ' a';
+      d.innerHTML = '<div class="mb">' + esc(text) + '</div><div class="mt">' + time + '</div>';
+      w.appendChild(d);
+    }
+    function addTyp() {
+      const el = document.createElement('div');
+      el.className = 'typi';
+      el.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+      document.getElementById('cm').appendChild(el);
+      return el;
+    }
+    function scrl() { const c = document.getElementById('cm'); c.scrollTop = c.scrollHeight; }
+    function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>'); }
+    function ck(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); snd(); } }
+    function ca(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 100) + 'px'; }
+
+    /* ── CALLS ── */
+    function cll(name, num) { T('📞 Calling ' + name + ': ' + num); setTimeout(() => window.open('tel:' + num, '_self'), 400); }
+
+    /* ── ELDERLY ── */
+    function togEl() {
+      ST.elderly = !ST.elderly;
+      document.body.classList.toggle('el', ST.elderly);
+      document.getElementById('et').classList.toggle('on', ST.elderly);
+      T(ST.elderly ? '👴 Elderly Mode ON!' : 'Elderly Mode OFF');
+    }
+
+    /* ── PDF ── */
+    function dlPDF() {
+      T('📄 PDF generate ho raha hai...');
+      setTimeout(() => {
+        if (!window.jspdf) { T('⚠️ Dobara try karo'); return; }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        doc.setFillColor(27, 67, 50); doc.rect(0, 0, 210, 40, 'F');
+        doc.setTextColor(255, 255, 255); doc.setFontSize(22); doc.setFont('helvetica', 'bold'); doc.text('TrueCompanion', 20, 16);
+        doc.setFontSize(11); doc.setFont('helvetica', 'normal'); doc.text('Weekly Mood & Wellness Report', 20, 25);
+        doc.text(new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }), 20, 33);
+        doc.setTextColor(50, 50, 50); doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.text('User: ' + (ST.name || 'Rahul Sharma'), 20, 54);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.text('Language: ' + ST.lang, 20, 62); doc.text('Streak: ' + ST.streak + ' days', 20, 70);
+        doc.setDrawColor(82, 183, 136); doc.setLineWidth(0.5); doc.line(20, 76, 190, 76);
+        const tm = ST.mh.at(-1) || { l: 'Good', s: 7 };
+        doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(27, 67, 50); doc.text("Today's Mood", 20, 86);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(60, 60, 60); doc.text('Status: ' + tm.l + ' — Score: ' + tm.s + '/10', 20, 94);
+        doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(27, 67, 50); doc.text('Weekly History', 20, 108);
+        doc.setFillColor(212, 232, 214); doc.rect(18, 112, 174, 8, 'F');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(27, 67, 50);
+        ['Date', 'Mood', 'Score'].forEach((c, i) => doc.text(c, [20, 90, 155][i], 118));
+        doc.setFont('helvetica', 'normal'); doc.setTextColor(60, 60, 60);
+        const hist = ST.mh.length > 0 ? ST.mh : [{ d: new Date().toDateString(), l: 'Good', s: 7 }];
+        hist.slice(-7).forEach((m, i) => {
+          const y = 128 + i * 9;
+          if (i % 2 === 0) { doc.setFillColor(248, 250, 248); doc.rect(18, y - 5, 174, 9, 'F'); }
+          doc.text(new Date(m.d).toLocaleDateString('en-IN'), 20, y); doc.text(m.l || '—', 90, y); doc.text(String(m.s || '—') + '/10', 155, y);
+        });
+        const iy = 130 + Math.max(hist.length, 1) * 9 + 14;
+        doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(27, 67, 50); doc.text('AI Insights', 20, iy);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(60, 60, 60);
+        doc.text('• Mood peaks mid-week. Maintain consistent morning routine.', 20, iy + 8, { maxWidth: 170 });
+        doc.text('• ' + ST.streak + '-day streak! Consistency is key to mental wellness.', 20, iy + 16, { maxWidth: 170 });
+        doc.text('• Short walk or breathing exercise helps when mood drops below 5.', 20, iy + 24, { maxWidth: 170 });
+        const cy = iy + 38;
+        doc.setFillColor(240, 245, 240); doc.rect(18, cy, 174, 22, 'F');
+        doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(27, 67, 50); doc.text('Crisis Support — 24/7 Free', 20, cy + 8);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(80, 80, 80);
+        doc.text('iCall: 9152987821  |  AASRA: 9820466627  |  Kiran: 1800-599-0019', 20, cy + 15);
+        doc.setFillColor(27, 67, 50); doc.rect(0, 277, 210, 20, 'F');
+        doc.setTextColor(255, 255, 255); doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+        doc.text("TrueCompanion — India's First AI Mental Health App | Made with love in India", 105, 285, { align: 'center' });
+        doc.text('Not a medical report. Consult a professional for clinical advice.', 105, 291, { align: 'center' });
+        doc.save('TrueCompanion_' + new Date().toISOString().slice(0, 10) + '.pdf');
+        T('✅ PDF download ho gaya!');
+      }, 200);
+    }
+
+    /* ── VOICE INTERFACE ── */
+    let rc = null, isRc = false;
+    let sysVoices = [];
+    if ('speechSynthesis' in window) {
+      sysVoices = window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => { sysVoices = window.speechSynthesis.getVoices(); };
+    }
+
+    /* Voice commands — matched after speech ends */
+    const VCMDS = [
+      { p: /\b(home|ghar|main screen|wapas jao)\b/i, a: () => { G('home'); T('🏠 Home!'); } },
+      { p: /\b(nayi chat|new chat|naya chat|nai chat)\b/i, a: () => { G('chat'); T('✨ Nayi chat!'); } },
+      { p: /\b(chat history|history|purani chat)\b/i, a: () => { G('hist'); T('📚 History!'); } },
+      { p: /\b(mood|mood log|apna mood)\b/i, a: () => { G('mood'); T('📊 Mood Tracker!'); } },
+      { p: /\b(crisis|emergency|bachao|help karo)\b/i, a: () => { G('crisis'); T('🆘 Crisis Support!'); } },
+      { p: /\b(settings|setting|sett)\b/i, a: () => { G('sett'); T('⚙️ Settings!'); } },
+      { p: /\b(bahut sad|very sad|bahut udas)\b/i, a: () => { setMoodVoice('😭'); } },
+      { p: /\b(thoda sad|sad|udas)\b/i, a: () => { setMoodVoice('😔'); } },
+      { p: /\b(theek|okay|normal|thik)\b/i, a: () => { setMoodVoice('😐'); } },
+      { p: /\b(acha|good|khush|thoda acha)\b/i, a: () => { setMoodVoice('😊'); } },
+      { p: /\b(bahut acha|great|amazing|bohot khush)\b/i, a: () => { setMoodVoice('😄'); } },
+      { p: /\b(logout|log out|bahar niklo)\b/i, a: () => { shwLo(); T('🚪 Logout?'); } },
+    ];
+
+    function setMoodVoice(emoji) {
+      const btn = document.querySelector(`.mbtn[data-e="${emoji}"]`);
+      if (btn) { G('mood'); setTimeout(() => sM(btn), 300); T(emoji + ' Mood saved!'); }
+    }
+
+    function execVoiceCmd(txt) {
+      for (const cmd of VCMDS) {
+        if (cmd.p.test(txt)) { cmd.a(); return true; }
+      }
+      return false;
+    }
+
+    function tgMic() {
+      const sR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!sR) { T('❌ Speech Recognition support nahi hai!'); return; }
+      if (isRc) { rc.stop(); return; }
+      rc = new sR();
+      rc.lang = ST.lang === 'Hindi' ? 'hi-IN' : ST.lang === 'Marathi' ? 'mr-IN' : ST.lang === 'Tamil' ? 'ta-IN' : ST.lang === 'Bengali' ? 'bn-IN' : 'en-IN';
+      rc.continuous = false; rc.interimResults = true;
+      rc.onstart = () => {
+        isRc = true;
+        document.getElementById('micBtn').style.background = 'var(--cdark)';
+        document.getElementById('micBtn').style.borderColor = 'var(--cdark)';
+        document.getElementById('micBtn').innerHTML = '🛑';
+        T('🎤 Bol do — command ya message...');
+      };
+      rc.onresult = (e) => {
+        let fR = '';
+        for (let i = 0; i < e.results.length; i++) fR += e.results[i][0].transcript;
+        document.getElementById('ci').value = fR;
+        ca(document.getElementById('ci'));
+      };
+      rc.onerror = (e) => { T('❌ Voice error: ' + e.error); stpMc(); };
+      rc.onend = () => {
+        const spoken = (document.getElementById('ci').value || '').trim();
+        stpMc();
+        if (!spoken) return;
+        /* try command first */
+        const matched = execVoiceCmd(spoken);
+        if (matched) {
+          document.getElementById('ci').value = '';
+          ca(document.getElementById('ci'));
+        } else {
+          /* auto-send as chat message — switch to chat if needed */
+          const chatVisible = document.getElementById('chat').classList.contains('show');
+          if (!chatVisible) G('chat');
+          setTimeout(() => snd(), chatVisible ? 0 : 350);
+        }
+      };
+      rc.start();
+    }
+    function stpMc() {
+      isRc = false;
+      document.getElementById('micBtn').style.background = '#fff';
+      document.getElementById('micBtn').style.borderColor = 'var(--brd)';
+      document.getElementById('micBtn').innerHTML = '🎤';
+    }
+    function tgVc() {
+      ST.voice = !ST.voice;
+      save();
+      document.getElementById('vcTog').classList.toggle('on', ST.voice);
+      T(ST.voice ? '🔊 Voice Response ON!' : 'Voice Response OFF');
+    }
+    function spk(txt) {
+      if (!ST.voice || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const cleanTxt = txt.replace(/[\u1F600-\u1F64F\u1F300-\u1F5FF\u1F680-\u1F6FF\u1F700-\u1F77F\u1F780-\u1F7FF\u1F800-\u1F8FF\u1F900-\u1F9FF\u1FA00-\u1FA6F\u1FA70-\u1FAFF\u2600-\u26FF\u2700-\u27BF]/g, '');
+      const u = new SpeechSynthesisUtterance(cleanTxt);
+      u.lang = ST.lang === 'Hindi' ? 'hi-IN' : 'en-IN';
+      u.rate = 0.95;
+      let v = sysVoices.find(x => x.lang === u.lang && (x.name.includes('Female') || x.name.includes('Google')))
+        || sysVoices.find(x => x.lang === u.lang)
+        || sysVoices.find(x => x.lang.includes('hi'))
+        || sysVoices[0];
+      if (v) u.voice = v;
+      window.speechSynthesis.speak(u);
+    }
+
+    /* ── TAB CLICKS ── */
+    document.querySelectorAll('.ti[data-s]').forEach(t => {
+      t.addEventListener('click', () => G(t.dataset.s));
+    });
+  </script>
+</body>
+
+</html>
